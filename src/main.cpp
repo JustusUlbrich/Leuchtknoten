@@ -5,6 +5,12 @@
 #include "ESPAsyncWebServer.h"
 #include "Spiffs.h"
 
+#include <string>
+
+// Nodes
+#include "json.hpp"
+#include "NodeNetwork/NodeNetwork.hpp"
+
 // Wifi
 const char *ssid = "PrettyFlyForAWifi";
 const char *password = "***REMOVED***";
@@ -25,35 +31,42 @@ enum LedMode
 
 uint16_t gDelay = 100;
 LedMode gMode = LedMode::off;
+CRGB gColor = CRGB::Black;
 
 CRGB leds[NUM_LEDS];
 
 // Http Server
 AsyncWebServer server(80);
 
-class RequestHandler : public AsyncWebHandler
+void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-public:
-	RequestHandler() {}
-	virtual ~RequestHandler() {}
+	std::string content = (char *)data;
 
-	bool canHandle(AsyncWebServerRequest *request)
+	Serial.println((char *)data);
+
+	auto jsonData = nlohmann::json::parse(content);
+
+	Node::NodeNetwork network;
+	nlohmann::from_json(jsonData, network);
+
+	auto &it = network.nodes.begin();
+	while (it != network.nodes.end())
 	{
-		//request->addInterestingHeader("ANY");
-		return true;
+		if (it->second.name == "Output")
+			break;
+
+		it++;
 	}
 
-	void handleRequest(AsyncWebServerRequest *request)
+	auto rgbOut = it->second.inputs.at("rgb");
+
+	if (rgbOut.connections.size() > 0)
 	{
-		AsyncResponseStream *response = request->beginResponseStream("text/html");
-		response->print("<!DOCTYPE html><html><head><title>Captive Portal</title></head><body>");
-		response->print("<p>This is out captive portal front page.</p>");
-		response->printf("<p>You were trying to reach: http://%s%s</p>", request->host().c_str(), request->url().c_str());
-		response->printf("<p>IP: </p>", WiFi.localIP().toString().c_str());
-		response->print("</body></html>");
-		request->send(response);
+		auto nodeId = std::to_string(rgbOut.connections[0].node);
+		network.nodes.
 	}
-};
+	request->send(200);
+}
 
 void setup()
 {
@@ -72,8 +85,7 @@ void setup()
 	}
 	Serial.println("Connected to the WiFi network: " + WiFi.localIP().toString());
 
-	// server.addHandler(new RequestHandler()); //only when requested from AP
-
+	// API
 	server.on("/api/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
 		gMode = (gMode != LedMode::single) ? LedMode::single : LedMode::pride;
 		request->send(200, "text/plain", "Success!");
@@ -84,10 +96,17 @@ void setup()
 		request->send(200, "text/plain", "Success!");
 	});
 
+	server.on(
+		"/api/node", HTTP_POST,
+		[](AsyncWebServerRequest *request) { request->send(200); },
+		[](...) {},
+		onUpdateNodes);
+
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 		request->send(SPIFFS, "/index.html", String());
 	});
 
+	// Web
 	SPIFFS.begin();
 	server.serveStatic("/", SPIFFS, "/");
 
