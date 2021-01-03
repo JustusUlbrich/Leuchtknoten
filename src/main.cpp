@@ -10,6 +10,7 @@
 // Nodes
 #include "json.hpp"
 #include "NodeNetwork/NodeNetwork.hpp"
+#include "NodeNetwork/Generators.hpp"
 
 // Wifi
 const char *ssid = "PrettyFlyForAWifi";
@@ -49,7 +50,7 @@ void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, si
 	Node::NodeNetwork network;
 	nlohmann::from_json(jsonData, network);
 
-	auto &it = network.nodes.begin();
+	auto it = network.nodes.begin();
 	while (it != network.nodes.end())
 	{
 		if (it->second.name == "Output")
@@ -63,7 +64,8 @@ void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, si
 	if (rgbOut.connections.size() > 0)
 	{
 		auto nodeId = std::to_string(rgbOut.connections[0].node);
-		network.nodes.
+		auto rgb = network.nodes.at(nodeId).data.rgb.get();
+		gColor.setRGB(rgb->r, rgb->g, rgb->b);
 	}
 	request->send(200);
 }

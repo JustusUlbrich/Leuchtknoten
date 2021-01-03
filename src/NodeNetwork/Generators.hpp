@@ -5,8 +5,8 @@
 
 #include "NodeNetwork.hpp"
 #include "Node.hpp"
-#include "Outputs.hpp"
-#include "Inputs.hpp"
+#include "Output.hpp"
+#include "Input.hpp"
 #include "ConnectionData.hpp"
 #include "NodeData.hpp"
 #include "DataRgb.hpp"
@@ -64,7 +64,7 @@ namespace nlohmann
 
 	inline void from_json(const json &j, Node::Connection &x)
 	{
-		x.data = j.at("data").get<Node::ConnectionData>();
+		// x.data = j.at("data").get<Node::ConnectionData>();
 		x.node = j.at("node").get<int>();
 		x.output = j.at("output").get<std::string>();
 	}
@@ -72,7 +72,7 @@ namespace nlohmann
 	inline void to_json(json &j, const Node::Connection &x)
 	{
 		j = json::object();
-		j["data"] = x.data;
+		// j["data"] = x.data;
 		j["node"] = x.node;
 		j["output"] = x.output;
 	}
