@@ -1,7 +1,6 @@
 #pragma once
 
-#include "json.hpp"
-#include "helper.hpp"
+#include <ArduinoJson.h>
 
 #include "NodeNetwork.hpp"
 #include "Node.hpp"
@@ -11,136 +10,203 @@
 #include "NodeData.hpp"
 #include "DataRgb.hpp"
 
-namespace nlohmann
+namespace Node
 {
-	void from_json(const json &j, Node::DataRgb &x);
-	void to_json(json &j, const Node::DataRgb &x);
+	void from_json(const JsonObject &j, DataRgb &x);
+	void to_json(JsonObject &j, const DataRgb &x);
 
-	void from_json(const json &j, Node::NodeData &x);
-	void to_json(json &j, const Node::NodeData &x);
+	void from_json(const JsonObject &j, NodeData &x);
+	void to_json(JsonObject &j, const NodeData &x);
 
-	void from_json(const json &j, Node::Connection &x);
-	void to_json(json &j, const Node::Connection &x);
+	void from_json(const JsonObject &j, Connection &x);
+	void to_json(JsonObject &j, const Connection &x);
 
-	void from_json(const json &j, Node::Input &x);
-	void to_json(json &j, const Node::Input &x);
+	void from_json(const JsonObject &j, Input &x);
+	void to_json(JsonObject &j, const Input &x);
 
-	void from_json(const json &j, Node::Output &x);
-	void to_json(json &j, const Node::Output &x);
+	void from_json(const JsonObject &j, Output &x);
+	void to_json(JsonObject &j, const Output &x);
 
-	void from_json(const json &j, Node::Node &x);
-	void to_json(json &j, const Node::Node &x);
+	void from_json(const JsonObject &j, Node &x);
+	void to_json(JsonObject &j, const Node &x);
 
-	void from_json(const json &j, Node::NodeNetwork &x);
-	void to_json(json &j, const Node::NodeNetwork &x);
+	void from_json(const JsonObject &j, NodeNetwork &x);
+	void to_json(JsonObject &j, const NodeNetwork &x);
 
-	inline void from_json(const json &j, Node::DataRgb &x)
+	inline void from_json(const JsonObject &j, DataRgb &x)
 	{
-		x.r = j.at("r").get<int>();
-		x.g = j.at("g").get<int>();
-		x.b = j.at("b").get<int>();
+		x.r = j["r"].as<int>();
+		x.g = j["g"].as<int>();
+		x.b = j["b"].as<int>();
 	}
 
-	inline void to_json(json &j, const Node::DataRgb &x)
+	inline void to_json(JsonObject &j, const DataRgb &x)
 	{
-		j = json::object();
 		j["r"] = x.r;
 		j["g"] = x.g;
 		j["b"] = x.b;
 	}
 
-	inline void from_json(const json &j, Node::NodeData &x)
+	inline void from_json(const JsonObject &j, NodeData &x)
 	{
-		x.num = Node::get_optional<int>(j, "num");
-		x.rgb = Node::get_optional<Node::DataRgb>(j, "rgb");
+		x.num = (j["num"].isNull()) ? std::shared_ptr<int>() : std::make_shared<int>(j["num"]);
+
+		if (j["rgb"].isNull())
+		{
+			x.rgb = nullptr;
+		} else {
+			DataRgb rgb;
+			from_json(j["rgb"], rgb);
+			x.rgb = std::make_shared<DataRgb>(rgb);
+		}
 	}
 
-	inline void to_json(json &j, const Node::NodeData &x)
+	inline void to_json(JsonObject &j, const NodeData &x)
 	{
-		j = json::object();
-		j["num"] = x.num;
-		j["rgb"] = x.rgb;
+		if (x.num.get() != nullptr)
+			j["num"] = *x.num;
+
+		if (x.rgb.get() != nullptr)
+		{
+			JsonObject rgb;
+			to_json(rgb, *x.rgb);
+			j["rgb"] = rgb;
+		}
 	}
 
-	inline void from_json(const json &j, Node::Connection &x)
+	inline void from_json(const JsonObject &j, Connection &x)
 	{
-		// x.data = j.at("data").get<Node::ConnectionData>();
-		x.node = j.at("node").get<int>();
-		x.output = j.at("output").get<std::string>();
+		// from_json(j["data"].as<JsonObject>(), x.data);
+		x.node = j["node"];
+		x.output = j["output"].as<std::string>();
 	}
 
-	inline void to_json(json &j, const Node::Connection &x)
+	inline void to_json(JsonObject &j, const Connection &x)
 	{
-		j = json::object();
-		// j["data"] = x.data;
+		// JsonObject data;
+		// to_json(data, x.data);
+		// j["data"] = data;
+
 		j["node"] = x.node;
 		j["output"] = x.output;
 	}
 
-	inline void from_json(const json &j, Node::ConnectionData &x)
+	inline void from_json(const JsonObject &j, ConnectionData &x)
 	{
 		// TODO
 	}
 
-	inline void to_json(json &j, const Node::ConnectionData &x)
+	inline void to_json(JsonObject &j, const ConnectionData &x)
 	{
 		// TODO
-		j = json::object();
 	}
 
-	inline void from_json(const json &j, Node::Input &x)
+	inline void from_json(const JsonObject &j, std::map<std::string, Input> &x)
 	{
-		x.connections = j.at("connections").get<std::vector<Node::Connection>>();
+		for (JsonPair ip : j) {
+			Input input;
+			from_json(ip.value().as<JsonObject>(), input);
+
+			x[std::string(ip.key().c_str())] = input;
+		}
 	}
 
-	inline void to_json(json &j, const Node::Input &x)
+	inline void to_json(JsonObject &j, const std::map<std::string, Input> &x)
 	{
-		j = json::object();
-		j["connections"] = x.connections;
+		// TODO
 	}
 
-	inline void from_json(const json &j, Node::Output &x)
+	inline void from_json(const JsonObject &j, std::map<std::string, Output> &x)
 	{
-		x.connections = j.at("connections").get<std::vector<Node::Connection>>();
+		for (JsonPair op : j) {
+			Output output;
+			from_json(op.value().as<JsonObject>(), output);
+
+			x[std::string(op.key().c_str())] = output;
+		}
 	}
 
-	inline void to_json(json &j, const Node::Output &x)
+	inline void to_json(JsonObject &j, const std::map<std::string, Output> &x)
 	{
-		j = json::object();
-		j["connections"] = x.connections;
+		// TODO
 	}
 
-	inline void from_json(const json &j, Node::Node &x)
+
+	inline void from_json(const JsonObject &j,  Input &x)
 	{
-		x.id = j.at("id").get<int>();
-		x.data = j.at("data").get<Node::NodeData>();
-		x.inputs = j.at("inputs").get<std::map<std::string, Node::Input>>();
-		x.outputs = j.at("outputs").get<std::map<std::string, Node::Output>>();
-		x.position = j.at("position").get<std::vector<int>>();
-		x.name = j.at("name").get<std::string>();
+		for (JsonVariant c : j["connections"].as<JsonArray>())
+		{
+			Connection con;
+			from_json(c, con);
+			x.connections.push_back(con);
+		}
 	}
 
-	inline void to_json(json &j, const Node::Node &x)
+	inline void to_json(JsonObject &j, const Input &x)
 	{
-		j = json::object();
-		j["id"] = x.id;
-		j["data"] = x.data;
-		j["inputs"] = x.inputs;
-		j["outputs"] = x.outputs;
-		j["position"] = x.position;
-		j["name"] = x.name;
+		// j = json::object();
+		// j["connections"] = x.connections;
 	}
 
-	inline void from_json(const json &j, Node::NodeNetwork &x)
+	inline void from_json(const JsonObject &j, Output &x)
 	{
-		x.id = j.at("id").get<std::string>();
-		x.nodes = j.at("nodes").get<std::map<std::string, Node::Node>>();
+		for (JsonVariant c : j["connections"].as<JsonArray>())
+		{
+			Connection con;
+			from_json(c, con);
+			x.connections.push_back(con);
+		}
 	}
 
-	inline void to_json(json &j, const Node::NodeNetwork &x)
+	inline void to_json(JsonObject &j, const Output &x)
 	{
-		j = json::object();
-		j["id"] = x.id;
-		j["nodes"] = x.nodes;
+		// j = json::object();
+		// j["connections"] = x.connections;
+	}
+
+	inline void from_json(const JsonObject &j, Node &x)
+	{
+		x.id = j["id"].as<int>();
+		from_json(j["data"], x.data);
+		from_json(j["inputs"], x.inputs);
+		from_json(j["outputs"], x.outputs);
+
+		x.position.push_back(j["position"][0]);
+		x.position.push_back(j["position"][1]);
+
+		x.name = j["name"].as<std::string>();
+	}
+
+	inline void to_json(JsonObject &j, const Node &x)
+	{
+		// j = json::object();
+		// j["id"] = x.id;
+		// j["data"] = x.data;
+		// j["inputs"] = x.inputs;
+		// j["outputs"] = x.outputs;
+		// j["position"] = x.position;
+		// j["name"] = x.name;
+	}
+
+	inline void from_json(char* json, NodeNetwork &x)
+	{
+		DynamicJsonDocument doc(3072);
+		deserializeJson(doc, json, DeserializationOption::NestingLimit(20));
+
+		x.id = doc["id"].as<std::string>();
+
+		for (JsonPair nodePair : doc["nodes"].as<JsonObject>()) {
+			Node node;
+			from_json(nodePair.value().as<JsonObject>(), node);
+
+			x.nodes[std::string(nodePair.key().c_str())] = node;
+		}
+	}
+
+	inline void to_json(JsonObject &j, const NodeNetwork &x)
+	{
+		// j = json::object();
+		// j["id"] = x.id;
+		// j["nodes"] = x.nodes;
 	}
 } // namespace nlohmann

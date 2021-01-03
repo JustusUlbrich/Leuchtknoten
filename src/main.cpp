@@ -8,9 +8,11 @@
 #include <string>
 
 // Nodes
-#include "json.hpp"
+#include <ArduinoJson.h>
+// #include "json.hpp"
 #include "NodeNetwork/NodeNetwork.hpp"
 #include "NodeNetwork/Generators.hpp"
+#include "NodeNetwork/Engine.hpp"
 
 // Wifi
 const char *ssid = "PrettyFlyForAWifi";
@@ -31,8 +33,8 @@ enum LedMode
 };
 
 uint16_t gDelay = 100;
-LedMode gMode = LedMode::off;
-CRGB gColor = CRGB::Black;
+LedMode gMode = LedMode::single;
+CRGB gColor = CRGB::White;
 
 CRGB leds[NUM_LEDS];
 
@@ -41,32 +43,13 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-	std::string content = (char *)data;
-
-	Serial.println((char *)data);
-
-	auto jsonData = nlohmann::json::parse(content);
-
+	// Serial.println((char *)data);
 	Node::NodeNetwork network;
-	nlohmann::from_json(jsonData, network);
+	Node::from_json((char*) data, network);
 
-	auto it = network.nodes.begin();
-	while (it != network.nodes.end())
-	{
-		if (it->second.name == "Output")
-			break;
+	auto rgb = Node::evaluate(network);
+	gColor.setRGB(rgb.r, rgb.g, rgb.b);
 
-		it++;
-	}
-
-	auto rgbOut = it->second.inputs.at("rgb");
-
-	if (rgbOut.connections.size() > 0)
-	{
-		auto nodeId = std::to_string(rgbOut.connections[0].node);
-		auto rgb = network.nodes.at(nodeId).data.rgb.get();
-		gColor.setRGB(rgb->r, rgb->g, rgb->b);
-	}
 	request->send(200);
 }
 
@@ -112,7 +95,17 @@ void setup()
 	SPIFFS.begin();
 	server.serveStatic("/", SPIFFS, "/");
 
-	//more handlers...
+	// Options default handler
+	server.onNotFound([](AsyncWebServerRequest *request) {
+	if (request->method() == HTTP_OPTIONS) {
+		request->send(200);
+	} else {
+		request->send(404);
+	}});
+
+	// CORS
+	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "content-type");
 	server.begin();
 }
 
@@ -164,7 +157,7 @@ void singleMode()
 	for (int whiteLed = 0; whiteLed < NUM_LEDS; whiteLed = whiteLed + 1)
 	{
 		// Turn our current led on to white, then show the leds
-		leds[whiteLed] = CRGB::White;
+		leds[whiteLed] = gColor;
 
 		// Show the leds (only one of which is set to white, from above)
 		FastLED.show();
