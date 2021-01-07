@@ -1,5 +1,8 @@
 #pragma once
-#include <memory>
+
+#include "variant.hpp"
+using namespace nonstd;
+
 namespace Node
 {
 	struct DataRgb;
@@ -9,7 +12,9 @@ namespace Node
 {
 	struct NodeData
 	{
-		std::shared_ptr<int> num;
-		std::shared_ptr<DataRgb> rgb;
+		nonstd::variant<int, DataRgb> data;
+
+		// std::shared_ptr<int> num;
+		// std::shared_ptr<DataRgb> rgb;
 	};
 } // namespace Node
