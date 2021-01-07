@@ -7,6 +7,6 @@ namespace Node
 {
 	struct Output
 	{
-		std::vector<Connection> connections;
+		std::shared_ptr<Connection> connection;
 	};
 } // namespace Node

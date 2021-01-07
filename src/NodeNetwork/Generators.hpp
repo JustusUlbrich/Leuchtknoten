@@ -54,7 +54,9 @@ namespace Node
 		if (j["rgb"].isNull())
 		{
 			x.rgb = nullptr;
-		} else {
+		}
+		else
+		{
 			DataRgb rgb;
 			from_json(j["rgb"], rgb);
 			x.rgb = std::make_shared<DataRgb>(rgb);
@@ -103,7 +105,8 @@ namespace Node
 
 	inline void from_json(const JsonObject &j, std::map<std::string, Input> &x)
 	{
-		for (JsonPair ip : j) {
+		for (JsonPair ip : j)
+		{
 			Input input;
 			from_json(ip.value().as<JsonObject>(), input);
 
@@ -118,7 +121,8 @@ namespace Node
 
 	inline void from_json(const JsonObject &j, std::map<std::string, Output> &x)
 	{
-		for (JsonPair op : j) {
+		for (JsonPair op : j)
+		{
 			Output output;
 			from_json(op.value().as<JsonObject>(), output);
 
@@ -131,8 +135,7 @@ namespace Node
 		// TODO
 	}
 
-
-	inline void from_json(const JsonObject &j,  Input &x)
+	inline void from_json(const JsonObject &j, Input &x)
 	{
 		for (JsonVariant c : j["connections"].as<JsonArray>())
 		{
@@ -150,11 +153,14 @@ namespace Node
 
 	inline void from_json(const JsonObject &j, Output &x)
 	{
-		for (JsonVariant c : j["connections"].as<JsonArray>())
+		auto connections = j["connections"].as<JsonArray>();
+
+		// Only use the first connection to output port
+		if (connections.size() > 0)
 		{
 			Connection con;
-			from_json(c, con);
-			x.connections.push_back(con);
+			from_json(connections[0], con);
+			x.connection = std::make_shared<Connection>(con);
 		}
 	}
 
@@ -188,18 +194,21 @@ namespace Node
 		// j["name"] = x.name;
 	}
 
-	inline void from_json(char* json, NodeNetwork &x)
+	inline void from_json(char *json, NodeNetwork &x)
 	{
 		DynamicJsonDocument doc(3072);
 		deserializeJson(doc, json, DeserializationOption::NestingLimit(20));
 
 		x.id = doc["id"].as<std::string>();
 
-		for (JsonPair nodePair : doc["nodes"].as<JsonObject>()) {
+		for (JsonPair nodePair : doc["nodes"].as<JsonObject>())
+		{
+			const auto nodeName = std::string(nodePair.key().c_str());
+
 			Node node;
 			from_json(nodePair.value().as<JsonObject>(), node);
 
-			x.nodes[std::string(nodePair.key().c_str())] = node;
+			x.nodes[nodeName] = std::make_shared<Node>(node);
 		}
 	}
 
@@ -209,4 +218,4 @@ namespace Node
 		// j["id"] = x.id;
 		// j["nodes"] = x.nodes;
 	}
-} // namespace nlohmann
+} // namespace Node

@@ -7,6 +7,6 @@ namespace Node
 	struct NodeNetwork
 	{
 		std::string id;
-		std::map<std::string, Node> nodes;
+		std::map<std::string, std::shared_ptr<Node>> nodes;
 	};
 } // namespace Node
