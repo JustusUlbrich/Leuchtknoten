@@ -11,7 +11,7 @@ namespace Node
 	public:
 		// TODO: private?
 		int id;
-		NodeData data;
+		// NodeData data;
 		std::vector<int> position;
 		std::string name;
 	};

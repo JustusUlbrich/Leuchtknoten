@@ -246,40 +246,39 @@ namespace Node
 		}
 	}
 
-	void nodeFromJson(JsonObject &j, shared_ptr<INode> node)
+	void fillNodeFromJson(JsonObject &j, std::shared_ptr<INode> node)
 	{
-		node.id = j["id"].as<int>();
+		node->id = j["id"].as<int>();
+		node->name = j["name"].as<std::string>();
 
-		from_json(j["data"], x.data);
-		from_json(j["inputs"], x.inputs);
-		from_json(j["outputs"], x.outputs);
-
-		x.position.push_back(j["position"][0]);
-		x.position.push_back(j["position"][1]);
-
-		x.name = j["name"].as<std::string>();
+		node->position.push_back(j["position"][0]);
+		node->position.push_back(j["position"][1]);
 	}
 
-	void parseInputs(JsonObject &j, NodeData &data)
+	std::shared_ptr<INode> createNodeFromJson(std::string& nodeID, JsonObject& nodes)
 	{
-		data.value =
-			x.num = (j["num"].isNull()) ? std::shared_ptr<int>()
-										: std::make_shared<int>(j["num"]);
+		std::shared_ptr<INode> node;
 
-		if (j["num"].isNull())
+		auto nodeJson = nodes[nodeID].as<JsonObject>();
+		// TODO: Better handling of node types and creation eg. factory etc
+		if (nodeJson["name"] == "RGB")
 		{
+			auto rgb = std::make_shared<NodeRgb>();
+			rgb->value.r = nodeJson["data"]["rgb"]["r"];
+			rgb->value.g = nodeJson["data"]["rgb"]["g"];
+			rgb->value.b = nodeJson["data"]["rgb"]["b"];
+
+			node = rgb;
+		} else if (nodeJson["name"] == "Number")
+		{
+			auto num = std::make_shared<NodeNumber>();
+			num->value = nodeJson["data"]["num"];
+
+			node = num;
 		}
 
-		if (j["rgb"].isNull())
-		{
-			x.rgb = nullptr;
-		}
-		else
-		{
-			DataRgb rgb;
-			from_json(j["rgb"], rgb);
-			x.rgb = std::make_shared<DataRgb>(rgb);
-		}
+
+		fillNodeFromJson(nodeJson, node);
+		return node;
 	}
-
 } // namespace Node

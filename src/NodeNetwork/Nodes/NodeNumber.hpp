@@ -18,9 +18,10 @@ namespace Node
 
 		int eval(const OutputPort<int, NodeNumber> &out, const Context &context, const LedContext &ledContext);
 
-	private:
+	// private:
 		// OutputPort<int, NodeNumber, &NodeNumer::evalNum> out;
 		OutputPort<int, NodeNumber> out;
+		int value;
 	};
 
 	NodeNumber::NodeNumber(/* args */)
@@ -33,8 +34,10 @@ namespace Node
 
 	int NodeNumber::eval(const OutputPort<int, NodeNumber> &out, const Context &context, const LedContext &ledContext)
 	{
-		auto data = nonstd::get<int>(this->data.value);
-		return data;
+		// auto data = nonstd::get<int>(this->data.value);
+		// return data;
+
+		return value;
 	}
 
 } // namespace Node
