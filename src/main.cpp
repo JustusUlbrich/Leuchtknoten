@@ -10,9 +10,7 @@
 // Nodes
 #include <ArduinoJson.h>
 // #include "json.hpp"
-#include "NodeNetwork/NodeNetwork.hpp"
 #include "NodeNetwork/Generators.hpp"
-#include "NodeNetwork/Engine.hpp"
 
 // Wifi
 const char *ssid = "PrettyFlyForAWifi";
@@ -44,11 +42,11 @@ AsyncWebServer server(80);
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
 	// Serial.println((char *)data);
-	Node::NodeNetwork network;
-	Node::from_json((char*) data, network);
+	// Node::NodeNetwork network;
+	// Node::from_json((char *)data, network);
 
-	auto rgb = Node::evaluate(network);
-	gColor.setRGB(rgb.r, rgb.g, rgb.b);
+	// auto rgb = Node::evaluate(network);
+	// gColor.setRGB(rgb.r, rgb.g, rgb.b);
 
 	request->send(200);
 }
@@ -101,11 +99,11 @@ void setup()
 		request->send(200);
 	} else {
 		request->send(404);
-	}});
+	} });
 
 	// CORS
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
-    DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "content-type");
+	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "content-type");
 	server.begin();
 }
 
