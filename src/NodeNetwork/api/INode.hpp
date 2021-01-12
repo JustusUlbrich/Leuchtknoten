@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "../../context.hpp"
@@ -19,6 +20,9 @@ namespace Node
 
 		template <typename T>
 		T eval(const Context &context, const LedContext &ledContext);
+
+		template <typename T>
+		std::shared_ptr<T> getPortAs(std::string portID);
 	};
 
 } // namespace Node

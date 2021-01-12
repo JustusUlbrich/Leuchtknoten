@@ -8,6 +8,7 @@
 #include <string>
 
 // Nodes
+#include "NodeNetwork/api/INode.hpp"
 #include <ArduinoJson.h>
 // #include "json.hpp"
 #include "NodeNetwork/Generators.hpp"
@@ -41,6 +42,10 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
+	auto rootNode = Node::fromNetworkJson((char *) data);
+	auto rgb = rootNode->eval<Node::DataRgb>(Context(), LedContext());
+
+	gColor.setRGB(rgb.r, rgb.g, rgb.b);
 	// Serial.println((char *)data);
 	// Node::NodeNetwork network;
 	// Node::from_json((char *)data, network);

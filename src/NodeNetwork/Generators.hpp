@@ -222,36 +222,6 @@ namespace Node
 	// 	// j["nodes"] = x.nodes;
 	// }
 
-	std::shared_ptr<INode> fromNetworkJson(char *json)
-	{
-		DynamicJsonDocument doc(3072);
-		deserializeJson(doc, json, DeserializationOption::NestingLimit(20));
-
-		// TODO: Node string to types ?
-
-		JsonObject rootObject;
-
-		// Search for output node
-		for (JsonPair nodePair : doc["nodes"].as<JsonObject>())
-		{
-			if (nodePair.value()["name"] == "Output")
-			{
-				rootObject = nodePair.value();
-				break;
-			}
-		}
-
-		if (rootObject.isNull())
-			return nullptr;
-
-		// Check for connection on root input
-		auto connections = rootObject["inputs"]["rgb"]["connections"].as<JsonArray>();
-		if (connections.isNull() == false && connections.size() > 0)
-		{
-			auto connected = connections[0]["node"].as<std::string>();
-		}
-	}
-
 	void fillNodeFromJson(JsonObject &j, std::shared_ptr<INode> node)
 	{
 		node->id = j["id"].as<int>();
@@ -285,7 +255,6 @@ namespace Node
 		}
 		else if (nodeJson["name"] == "Output")
 		{
-
 			auto out = std::make_shared<NodeOutput>();
 
 			// Check for connection on output node
@@ -301,5 +270,43 @@ namespace Node
 
 		fillNodeFromJson(nodeJson, node);
 		return node;
+	}
+
+	std::shared_ptr<INode> fromNetworkJson(char *json)
+	{
+		DynamicJsonDocument doc(3072);
+		deserializeJson(doc, json, DeserializationOption::NestingLimit(20));
+
+		// TODO: Node string to types ?
+
+		JsonObject nodes = doc["nodes"].as<JsonObject>();
+
+		JsonObject rootObject;
+		std::string rootId;
+
+		// Search for output node
+		for (JsonPair nodePair : doc["nodes"].as<JsonObject>())
+		{
+			if (nodePair.value()["name"] == "Output")
+			{
+				rootObject = nodePair.value();
+				rootId = std::string(nodePair.key().c_str());
+				break;
+			}
+		}
+
+		if (rootObject.isNull())
+			return nullptr;
+
+		auto rootNode = createNodeFromJson(rootId, nodes);
+
+		return rootNode;
+
+		// // Check for connection on root input
+		// auto connections = rootObject["inputs"]["rgb"]["connections"].as<JsonArray>();
+		// if (connections.isNull() == false && connections.size() > 0)
+		// {
+		// 	auto connected = connections[0]["node"].as<std::string>();
+		// }
 	}
 } // namespace Node
