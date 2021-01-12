@@ -2,16 +2,24 @@
 
 #include <memory>
 
-#include "INode.hpp"
-#include "ConnectionData.hpp"
+// #include "Port.hpp"
+// #include "ConnectionData.hpp"
 
 namespace Node
 {
+	template <typename X>
+	class OutputPort;
+
+	template <typename X>
+	class InputPort;
+
 	template <typename T>
 	class Connection
 	{
-		std::shared_ptr<INode> fromPort;
-		std::shared_ptr<INode> toPort;
+	private:
+	public:
+		std::shared_ptr<OutputPort<T>> fromPort;
+		std::shared_ptr<InputPort<T>> toPort;
 
 		// std::string port;
 		// ConnectionData data;

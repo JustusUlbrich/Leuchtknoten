@@ -3,6 +3,8 @@
 
 #include "../api/INode.hpp"
 #include "../api/Port.hpp"
+#include "../api/Connection.hpp"
+#include "../api/DataRgb.hpp"
 
 #include "../../context.hpp"
 
@@ -12,10 +14,19 @@ namespace Node
 	{
 
 	public:
-		int eval(const OutputPort<int, NodeOutput> &out, const Context &context, const LedContext &ledContext);
-
-	private:
-		InputPort<DataRgb, NodeOutput> out;
+		DataRgb eval(const Context &context, const LedContext &ledContext);
+		InputPort<DataRgb> in;
 	};
+
+	DataRgb NodeOutput::eval(const Context &context, const LedContext &ledContext)
+	{
+		if (this->in.connection.has_value())
+		{
+			auto con = this->in.connection.value();
+			return con.fromPort->eval(context, ledContext);
+		}
+
+		return DataRgb();
+	}
 
 } // namespace Node

@@ -5,6 +5,7 @@
 #include <memory>
 #include "optional.hpp"
 
+#include "INode.hpp"
 #include "Connection.hpp"
 #include "../../context.hpp"
 
@@ -12,25 +13,29 @@
 
 namespace Node
 {
-	template <typename T, typename N>
+	template <typename T>
 	class InputPort
 	{
-		std::shared_ptr<N> node;
+	public:
+		std::string identifier;
+		std::shared_ptr<INode> node;
 		nonstd::optional<Connection<T>> connection;
 	};
 
 	// template <typename T, typename N, T (N::*func)(const Context&, const LedContext&)>
-	template <typename T, typename N>
+	template <typename T>
 	class OutputPort
 	{
+	public:
 		std::string identifier;
-		std::shared_ptr<N> node;
+		std::shared_ptr<INode> node;
 		std::vector<Connection<T>> connections;
 
 		T eval(const Context &context, const LedContext &ledContext)
 		{
-			return node->eval(this, context, ledContext);
+			return node->eval<T>(context, ledContext);
 			// return (node->*func)(context, ledContext);
 		}
 	};
+
 } // namespace Node

@@ -222,7 +222,7 @@ namespace Node
 	// 	// j["nodes"] = x.nodes;
 	// }
 
-	void fromNetworkJson(char *json)
+	std::shared_ptr<INode> fromNetworkJson(char *json)
 	{
 		DynamicJsonDocument doc(3072);
 		deserializeJson(doc, json, DeserializationOption::NestingLimit(20));
@@ -234,15 +234,21 @@ namespace Node
 		// Search for output node
 		for (JsonPair nodePair : doc["nodes"].as<JsonObject>())
 		{
-			if (nodePair.value()['name'] == "Output")
+			if (nodePair.value()["name"] == "Output")
 			{
 				rootObject = nodePair.value();
 				break;
 			}
+		}
 
-			from_json(nodePair.value().as<JsonObject>(), node);
+		if (rootObject.isNull())
+			return nullptr;
 
-			x.nodes[node.id] = std::make_shared<Node>(node);
+		// Check for connection on root input
+		auto connections = rootObject["inputs"]["rgb"]["connections"].as<JsonArray>();
+		if (connections.isNull() == false && connections.size() > 0)
+		{
+			auto connected = connections[0]["node"].as<std::string>();
 		}
 	}
 
@@ -255,7 +261,7 @@ namespace Node
 		node->position.push_back(j["position"][1]);
 	}
 
-	std::shared_ptr<INode> createNodeFromJson(std::string& nodeID, JsonObject& nodes)
+	std::shared_ptr<INode> createNodeFromJson(std::string &nodeID, JsonObject &nodes)
 	{
 		std::shared_ptr<INode> node;
 
@@ -269,14 +275,29 @@ namespace Node
 			rgb->value.b = nodeJson["data"]["rgb"]["b"];
 
 			node = rgb;
-		} else if (nodeJson["name"] == "Number")
+		}
+		else if (nodeJson["name"] == "Number")
 		{
 			auto num = std::make_shared<NodeNumber>();
 			num->value = nodeJson["data"]["num"];
 
 			node = num;
 		}
+		else if (nodeJson["name"] == "Output")
+		{
 
+			auto out = std::make_shared<NodeOutput>();
+
+			// Check for connection on output node
+			auto connections = nodeJson["inputs"]["rgb"]["connections"].as<JsonArray>();
+			if (connections.isNull() == false && connections.size() > 0)
+			{
+				auto connectedId = connections[0]["node"].as<std::string>();
+				auto connectedNode = createNodeFromJson(connectedId, nodes);
+
+				// out->
+			}
+		}
 
 		fillNodeFromJson(nodeJson, node);
 		return node;

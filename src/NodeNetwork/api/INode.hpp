@@ -2,7 +2,9 @@
 
 #include <vector>
 
-#include "NodeData.hpp"
+#include "../../context.hpp"
+
+// #include "NodeData.hpp"
 
 namespace Node
 {
@@ -14,6 +16,9 @@ namespace Node
 		// NodeData data;
 		std::vector<int> position;
 		std::string name;
+
+		template <typename T>
+		T eval(const Context &context, const LedContext &ledContext);
 	};
 
 } // namespace Node

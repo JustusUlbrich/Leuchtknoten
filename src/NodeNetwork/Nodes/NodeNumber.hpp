@@ -16,11 +16,11 @@ namespace Node
 		~NodeNumber();
 		// int evalNum(const Context &context, const LedContext &ledContext);
 
-		int eval(const OutputPort<int, NodeNumber> &out, const Context &context, const LedContext &ledContext);
+		int eval(const OutputPort<int> &out, const Context &context, const LedContext &ledContext);
 
-	// private:
+		// private:
 		// OutputPort<int, NodeNumber, &NodeNumer::evalNum> out;
-		OutputPort<int, NodeNumber> out;
+		OutputPort<int> out;
 		int value;
 	};
 
@@ -32,7 +32,7 @@ namespace Node
 	{
 	}
 
-	int NodeNumber::eval(const OutputPort<int, NodeNumber> &out, const Context &context, const LedContext &ledContext)
+	int NodeNumber::eval(const OutputPort<int> &out, const Context &context, const LedContext &ledContext)
 	{
 		// auto data = nonstd::get<int>(this->data.value);
 		// return data;

@@ -4,11 +4,11 @@ namespace Node
 {
 	enum NodeType
 	{
-		OUTPUT,
+		ROOT,
 		NUM,
 		LOOKUP,
 		DIVISION,
 		RGB,
-		GRADIENT,
+		GRADIENT
 	};
 } // namespace Node

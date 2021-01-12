@@ -15,9 +15,9 @@ namespace Node
 		NodeRgb(/* args */);
 		~NodeRgb();
 
-		DataRgb eval(const OutputPort<int, NodeRgb> &out, const Context &context, const LedContext &ledContext);
+		DataRgb eval(const OutputPort<int> &out, const Context &context, const LedContext &ledContext);
 
-		OutputPort<int, NodeRgb> out;
+		OutputPort<int> out;
 		DataRgb value;
 	};
 
@@ -29,7 +29,7 @@ namespace Node
 	{
 	}
 
-	DataRgb NodeRgb::eval(const OutputPort<int, NodeRgb> &out, const Context &context, const LedContext &ledContext)
+	DataRgb NodeRgb::eval(const OutputPort<int> &out, const Context &context, const LedContext &ledContext)
 	{
 		return this->value;
 	}
