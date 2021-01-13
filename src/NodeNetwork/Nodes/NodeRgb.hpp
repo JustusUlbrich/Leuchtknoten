@@ -17,12 +17,13 @@ namespace Node
 
 		void eval(const Context &context, const LedContext &ledContext, DataRgb &out) override;
 
-		OutputPort<int> out;
+		std::shared_ptr<OutputPort<DataRgb>> out;
 		DataRgb value;
 	};
 
 	NodeRgb::NodeRgb(/* args */)
 	{
+		out = std::make_shared<OutputPort<DataRgb>>("num", getptr());
 	}
 
 	NodeRgb::~NodeRgb()

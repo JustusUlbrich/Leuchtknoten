@@ -14,15 +14,28 @@ namespace Node
 	{
 
 	public:
+		NodeOutput(/* args */);
+		~NodeOutput();
+
 		void eval(const Context &context, const LedContext &ledContext, DataRgb &out) override;
-		InputPort<DataRgb> in;
+		std::shared_ptr<InputPort<DataRgb>> in;
 	};
+
+	NodeOutput::NodeOutput()
+	{
+		in = std::make_shared<InputPort<DataRgb>>("rgb", getptr());
+	}
+
+	NodeOutput::~NodeOutput()
+	{
+
+	}
 
 	void NodeOutput::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
 	{
-		if (this->in.connection.has_value())
+		if (this->in->connection.has_value())
 		{
-			auto con = this->in.connection.value();
+			auto con = this->in->connection.value();
 			out = con.fromPort->eval(context, ledContext);
 		}
 	}

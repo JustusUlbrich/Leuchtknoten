@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "Connection.hpp"
 #include "DataRgb.hpp"
 #include "../../context.hpp"
 
@@ -10,7 +11,7 @@
 
 namespace Node
 {
-	class INode
+	class INode : std::enable_shared_from_this<INode>
 	{
 	public:
 		// TODO: private?
@@ -22,8 +23,12 @@ namespace Node
 		virtual void eval(const Context &context, const LedContext &ledContext, DataRgb &out){};
 		virtual void eval(const Context &context, const LedContext &ledContext, int &out){};
 
-		template <typename T>
-		std::shared_ptr<T> getPortAs(std::string portID);
+		virtual void connectOutport(const std::string &portID, Connection<DataRgb> &connection) {};
+		virtual void connectOutport(const std::string &portID, Connection<int> &connection) {};
+
+		std::shared_ptr<INode> getptr() {
+			return shared_from_this();
+		}
 	};
 
 } // namespace Node

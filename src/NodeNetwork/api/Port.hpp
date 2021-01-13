@@ -20,6 +20,12 @@ namespace Node
 		std::string identifier;
 		std::shared_ptr<INode> node;
 		nonstd::optional<Connection<T>> connection;
+
+		InputPort() = delete;
+
+		InputPort(std::string identifier, std::shared_ptr<INode> node)
+		: identifier(identifier), node(node)
+		{}
 	};
 
 	template <typename T>
@@ -29,6 +35,12 @@ namespace Node
 		std::string identifier;
 		std::shared_ptr<INode> node;
 		std::vector<Connection<T>> connections;
+
+		OutputPort() = delete;
+
+		OutputPort(std::string identifier, std::shared_ptr<INode> node)
+		: identifier(identifier), node(node)
+		{}
 
 		T eval(const Context &context, const LedContext &ledContext)
 		{
