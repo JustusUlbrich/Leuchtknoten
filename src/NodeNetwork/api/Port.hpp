@@ -22,7 +22,6 @@ namespace Node
 		nonstd::optional<Connection<T>> connection;
 	};
 
-	// template <typename T, typename N, T (N::*func)(const Context&, const LedContext&)>
 	template <typename T>
 	class OutputPort
 	{
@@ -33,8 +32,9 @@ namespace Node
 
 		T eval(const Context &context, const LedContext &ledContext)
 		{
-			return node->eval<T>(context, ledContext);
-			// return (node->*func)(context, ledContext);
+			T out;
+			node->eval(context, ledContext, out);
+			return out;
 		}
 	};
 

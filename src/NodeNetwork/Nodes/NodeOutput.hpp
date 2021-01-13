@@ -14,19 +14,17 @@ namespace Node
 	{
 
 	public:
-		DataRgb eval(const Context &context, const LedContext &ledContext);
+		void eval(const Context &context, const LedContext &ledContext, DataRgb &out) override;
 		InputPort<DataRgb> in;
 	};
 
-	DataRgb NodeOutput::eval(const Context &context, const LedContext &ledContext)
+	void NodeOutput::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
 	{
 		if (this->in.connection.has_value())
 		{
 			auto con = this->in.connection.value();
-			return con.fromPort->eval(context, ledContext);
+			out = con.fromPort->eval(context, ledContext);
 		}
-
-		return DataRgb();
 	}
 
 } // namespace Node

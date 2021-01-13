@@ -14,12 +14,9 @@ namespace Node
 	public:
 		NodeNumber(/* args */);
 		~NodeNumber();
-		// int evalNum(const Context &context, const LedContext &ledContext);
 
-		int eval(const Context &context, const LedContext &ledContext);
+		void eval(const Context &context, const LedContext &ledContext, int &out) override;
 
-		// private:
-		// OutputPort<int, NodeNumber, &NodeNumer::evalNum> out;
 		OutputPort<int> out;
 		int value;
 	};
@@ -32,9 +29,9 @@ namespace Node
 	{
 	}
 
-	int NodeNumber::eval(const Context &context, const LedContext &ledContext)
+	void NodeNumber::eval(const Context &context, const LedContext &ledContext, int &out)
 	{
-		return value;
+		out = value;
 	}
 
 } // namespace Node

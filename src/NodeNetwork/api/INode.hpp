@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "DataRgb.hpp"
 #include "../../context.hpp"
 
 // #include "NodeData.hpp"
@@ -18,8 +19,8 @@ namespace Node
 		std::vector<int> position;
 		std::string name;
 
-		template <typename T>
-		T eval(const Context &context, const LedContext &ledContext);
+		virtual void eval(const Context &context, const LedContext &ledContext, DataRgb &out){};
+		virtual void eval(const Context &context, const LedContext &ledContext, int &out){};
 
 		template <typename T>
 		std::shared_ptr<T> getPortAs(std::string portID);

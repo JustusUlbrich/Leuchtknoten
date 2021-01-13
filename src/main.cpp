@@ -42,8 +42,10 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-	auto rootNode = Node::fromNetworkJson((char *) data);
-	auto rgb = rootNode->eval<Node::DataRgb>(Context(), LedContext());
+	auto rootNode = Node::fromNetworkJson((char *)data);
+
+	Node::DataRgb rgb;
+	rootNode->eval(Context(), LedContext(), rgb);
 
 	gColor.setRGB(rgb.r, rgb.g, rgb.b);
 	// Serial.println((char *)data);
