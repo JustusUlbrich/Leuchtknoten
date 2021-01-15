@@ -11,24 +11,24 @@
 
 namespace Node
 {
-	class INode : std::enable_shared_from_this<INode>
+	class INode
 	{
 	public:
 		// TODO: private?
-		int id;
+		int id = -1;
 		// NodeData data;
 		std::vector<int> position;
-		std::string name;
+		std::string name = "";
+
+		// TODO: Think about refactoring this
 
 		virtual void eval(const Context &context, const LedContext &ledContext, DataRgb &out){};
 		virtual void eval(const Context &context, const LedContext &ledContext, int &out){};
+		virtual void eval(const Context &context, const LedContext &ledContext, float &out){};
 
-		virtual void connectOutport(const std::string &portID, Connection<DataRgb> &connection) {};
-		virtual void connectOutport(const std::string &portID, Connection<int> &connection) {};
-
-		std::shared_ptr<INode> getptr() {
-			return shared_from_this();
-		}
+		virtual void connectOutport(const std::string &portID, Connection<DataRgb> &connection){};
+		virtual void connectOutport(const std::string &portID, Connection<int> &connection){};
+		virtual void connectOutport(const std::string &portID, Connection<float> &connection){};
 	};
 
 } // namespace Node

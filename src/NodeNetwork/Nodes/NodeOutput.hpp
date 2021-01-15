@@ -23,21 +23,34 @@ namespace Node
 
 	NodeOutput::NodeOutput()
 	{
-		in = std::make_shared<InputPort<DataRgb>>("rgb", getptr());
+		in = std::make_shared<InputPort<DataRgb>>("rgb", this);
 	}
 
 	NodeOutput::~NodeOutput()
 	{
-
 	}
 
 	void NodeOutput::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
 	{
-		if (this->in->connection.has_value())
+		Serial.print("\t\t eval at node: ");
+		Serial.println(name.c_str());
+
+		if (in->connection)
 		{
-			auto con = this->in->connection.value();
-			out = con.fromPort->eval(context, ledContext);
+			Serial.print("\t\t\t eval connection");
+
+			auto con = *in->connection;
+			if (con.fromPort != nullptr)
+				out = con.fromPort->eval(context, ledContext);
+			else
+				Serial.print("\t\t\t fromPort empty :(");
 		}
+		else
+		{
+			Serial.print("\t\t\t connection empty :(");
+		}
+
+		Serial.println("\t\t done eval output");
 	}
 
 } // namespace Node

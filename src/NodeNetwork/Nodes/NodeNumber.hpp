@@ -24,7 +24,7 @@ namespace Node
 
 	NodeNumber::NodeNumber(/* args */)
 	{
-		out = std::make_shared<OutputPort<int>>("num", getptr());
+		out = std::make_shared<OutputPort<int>>("num", this);
 	}
 
 	NodeNumber::~NodeNumber()

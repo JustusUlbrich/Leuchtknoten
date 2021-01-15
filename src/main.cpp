@@ -26,15 +26,19 @@ const char *password = "***REMOVED***";
 
 enum LedMode
 {
+	all,
 	single,
 	pride,
 	off
 };
 
 uint16_t gDelay = 100;
-LedMode gMode = LedMode::single;
-CRGB gColor = CRGB::White;
+LedMode gMode = LedMode::all;
 
+std::vector<std::shared_ptr<Node::INode>> gNodes;
+bool gNeedUpate = false;
+
+CRGB gColors[NUM_LEDS];
 CRGB leds[NUM_LEDS];
 
 // Http Server
@@ -42,24 +46,22 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-	auto rootNode = Node::fromNetworkJson((char *)data);
+	gNodes.clear();
+	Node::fromNetworkJson((char *)data, gNodes);
 
-	Node::DataRgb rgb;
-	rootNode->eval(Context(), LedContext(), rgb);
+	Serial.println("Done with network parsing");
 
-	gColor.setRGB(rgb.r, rgb.g, rgb.b);
+	gNeedUpate = true;
+
 	// Serial.println((char *)data);
-	// Node::NodeNetwork network;
-	// Node::from_json((char *)data, network);
-
-	// auto rgb = Node::evaluate(network);
-	// gColor.setRGB(rgb.r, rgb.g, rgb.b);
-
 	request->send(200);
 }
 
 void setup()
 {
+	for (int i = 0; i < NUM_LEDS; i++)
+		gColors[i] = CRGB::White;
+
 	delay(2000); // sanity delay
 	FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
 
@@ -162,7 +164,7 @@ void singleMode()
 	for (int whiteLed = 0; whiteLed < NUM_LEDS; whiteLed = whiteLed + 1)
 	{
 		// Turn our current led on to white, then show the leds
-		leds[whiteLed] = gColor;
+		leds[whiteLed] = gColors[whiteLed];
 
 		// Show the leds (only one of which is set to white, from above)
 		FastLED.show();
@@ -175,10 +177,46 @@ void singleMode()
 	}
 }
 
+void allMode()
+{
+	for (int i = 0; i < NUM_LEDS; i++)
+	{
+		// Turn our current led on to white, then show the leds
+		leds[i] = gColors[i];
+	}
+	// Show the leds (only one of which is set to white, from above)
+	FastLED.show();
+	// Wait a little bit
+	delay(gDelay);
+}
+
 void loop()
 {
+	if (gNodes.size() > 0 && gNeedUpate)
+	{
+		gNeedUpate = false;
+		Node::DataRgb rgb;
+		for (int i = 0; i < NUM_LEDS; i++)
+		{
+			LedContext ledCtx;
+			ledCtx.id = i;
+
+			gNodes[0]->eval(Context(), ledCtx, rgb);
+
+			// Serial.print("Eval:");
+			// Serial.print(rgb.r);
+			// Serial.print(rgb.g);
+			// Serial.println(rgb.b);
+
+			gColors[i].setRGB(rgb.r, rgb.g, rgb.b);
+		}
+	}
+
 	switch (gMode)
 	{
+	case LedMode::all:
+		allMode();
+		break;
 	case LedMode::single:
 		singleMode();
 		break;

@@ -18,8 +18,8 @@ namespace Node
 	{
 	private:
 	public:
-		std::shared_ptr<OutputPort<T>> fromPort;
-		std::shared_ptr<InputPort<T>> toPort;
+		std::shared_ptr<OutputPort<T>> fromPort = nullptr;
+		std::shared_ptr<InputPort<T>> toPort = nullptr;
 
 		// std::string port;
 		// ConnectionData data;

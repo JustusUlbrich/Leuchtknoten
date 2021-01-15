@@ -16,6 +16,7 @@ namespace Node
 		~NodeRgb();
 
 		void eval(const Context &context, const LedContext &ledContext, DataRgb &out) override;
+		void connectOutport(const std::string &portID, Connection<DataRgb> &connection) override;
 
 		std::shared_ptr<OutputPort<DataRgb>> out;
 		DataRgb value;
@@ -23,7 +24,7 @@ namespace Node
 
 	NodeRgb::NodeRgb(/* args */)
 	{
-		out = std::make_shared<OutputPort<DataRgb>>("num", getptr());
+		out = std::make_shared<OutputPort<DataRgb>>("num", this);
 	}
 
 	NodeRgb::~NodeRgb()
@@ -32,7 +33,15 @@ namespace Node
 
 	void NodeRgb::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
 	{
-		out = this->value;
+		Serial.print("\t\t eval rgb");
+		Serial.println(id);
+
+		out = value;
+	}
+
+	void NodeRgb::connectOutport(const std::string &portID, Connection<DataRgb> &connection)
+	{
+		connection.fromPort = std::shared_ptr<OutputPort<DataRgb>>(out);
 	}
 
 } // namespace Node

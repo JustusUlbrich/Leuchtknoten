@@ -18,34 +18,46 @@ namespace Node
 	{
 	public:
 		std::string identifier;
-		std::shared_ptr<INode> node;
+		INode *node;
 		nonstd::optional<Connection<T>> connection;
 
 		InputPort() = delete;
 
-		InputPort(std::string identifier, std::shared_ptr<INode> node)
-		: identifier(identifier), node(node)
-		{}
+		InputPort(std::string identifier, INode *node)
+			: identifier(identifier), node(node)
+		{
+		}
 	};
 
 	template <typename T>
 	class OutputPort
 	{
 	public:
-		std::string identifier;
-		std::shared_ptr<INode> node;
+		std::string identifier = "";
+		INode *node = nullptr;
 		std::vector<Connection<T>> connections;
 
 		OutputPort() = delete;
 
-		OutputPort(std::string identifier, std::shared_ptr<INode> node)
-		: identifier(identifier), node(node)
-		{}
+		OutputPort(std::string _identifier, INode *_node)
+			: identifier(_identifier), node(_node)
+		{
+			Serial.printf("\t\t\t Create Port %s with Node %s \n", identifier.c_str(), node->name.c_str());
+		}
 
 		T eval(const Context &context, const LedContext &ledContext)
 		{
-			T out;
-			node->eval(context, ledContext, out);
+			Serial.print("\t\t\t Eval Port: ");
+			Serial.println(identifier.c_str());
+
+			Serial.println("\t\t\t at Node: ");
+			Serial.println(node->id);
+
+			T out = T();
+			// if (node != nullptr)
+			// 	node->eval(context, ledContext, out);
+			// else
+			// 	Serial.println("\t\t\t Port node empty :(");
 			return out;
 		}
 	};
