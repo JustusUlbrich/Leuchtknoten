@@ -23,7 +23,7 @@ namespace Node
 
 		InputPort() = delete;
 
-		InputPort(std::string identifier, INode *node)
+		InputPort(const std::string &identifier, INode *node)
 			: identifier(identifier), node(node)
 		{
 		}
@@ -39,8 +39,8 @@ namespace Node
 
 		OutputPort() = delete;
 
-		OutputPort(std::string _identifier, INode *_node)
-			: identifier(_identifier), node(_node)
+		OutputPort(const std::string &identifier, INode *_node)
+			: identifier(identifier), node(_node)
 		{
 			Serial.printf("\t\t\t Create Port %s with Node %s \n", identifier.c_str(), node->name.c_str());
 		}

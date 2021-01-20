@@ -3,6 +3,8 @@
 #include <memory>
 #include <vector>
 
+#include <ArduinoJson.h>
+
 #include "Connection.hpp"
 #include "DataRgb.hpp"
 #include "../../context.hpp"
@@ -11,6 +13,7 @@
 
 namespace Node
 {
+	class NodeFactory;
 	class INode
 	{
 	public:
@@ -19,6 +22,8 @@ namespace Node
 		// NodeData data;
 		std::vector<int> position;
 		std::string name = "";
+
+		explicit INode(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory) {};
 
 		// TODO: Think about refactoring this
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_map>
+
 #include <ArduinoJson.h>
 
 #include "api/Port.hpp"
@@ -15,9 +17,11 @@
 #include "nodes/NodeGradient.hpp"
 #include "nodes/NodeOutput.hpp"
 
+#include "NodeFactory.hpp"
+
 namespace Node
 {
-	void fillNodeFromJson(JsonObject &j, std::shared_ptr<INode> node)
+	static void fillNodeFromJson(JsonObject &j, std::shared_ptr<INode> node)
 	{
 		node->id = j["id"].as<int>();
 		node->name = j["name"].as<std::string>();
@@ -26,33 +30,31 @@ namespace Node
 		// node->position.push_back(j["position"][1].as<int>());
 	}
 
-	void createNodeFromJson(std::string &nodeID, JsonObject &jsonNodes, std::vector<std::shared_ptr<INode>> &nodes)
+	static std::shared_ptr<INode> createNodeFromJson(const std::string &nodeID, JsonObject &jsonNodes, NodeFactory *nodeFactory)
 	{
 		Serial.print("\t Start Node:");
 		Serial.println(nodeID.c_str());
+
+		// auto createChild = [&jsonNodes, &nodes](const std::string& childID) {
+		// 	createNodeFromJson(childID, jsonNodes, nodes);
+		// };
+
+		std::shared_ptr<INode> newNode = nullptr;
 
 		auto nodeJson = jsonNodes[nodeID].as<JsonObject>();
 		// TODO: Better handling of node types and creation eg. factory etc
 		// Probably just put it into constructor of nodes and pass json
 		if (nodeJson["name"] == "RGB")
 		{
-			auto rgb = std::make_shared<NodeRgb>();
-			rgb->value.r = nodeJson["data"]["rgb"]["r"];
-			rgb->value.g = nodeJson["data"]["rgb"]["g"];
-			rgb->value.b = nodeJson["data"]["rgb"]["b"];
-
-			nodes.push_back(rgb);
+			newNode = std::make_shared<NodeRgb>(nodeJson, nodeFactory);
 		}
 		else if (nodeJson["name"] == "Number")
 		{
-			auto num = std::make_shared<NodeNumber>();
-			num->value = nodeJson["data"]["num"].as<int>();
-
-			nodes.push_back(num);
+			newNode = std::make_shared<NodeNumber>(nodeJson, nodeFactory);
 		}
 		else if (nodeJson["name"] == "Gradient")
 		{
-			auto gradientNode = std::make_shared<NodeGradient>();
+			auto gradientNode = std::make_shared<NodeGradient>(nodeJson, nodeFactory);
 
 			auto jsonGradients = nodeJson["data"]["gradient"].as<JsonArray>();
 			for (JsonVariant v : jsonGradients)
@@ -66,42 +68,27 @@ namespace Node
 
 			// TODO: Check for connections and handle
 
-			nodes.push_back(gradientNode);
+			// nodes.push_back(gradientNode);
 		}
 		else if (nodeJson["name"] == "Output")
 		{
-			auto outNode = std::make_shared<NodeOutput>();
-
-			// Check for connections and handle
-			auto connections = nodeJson["inputs"]["rgb"]["connections"].as<JsonArray>();
-			if (connections.isNull() == false && connections.size() > 0)
-			{
-				auto connectedId = connections[0]["node"].as<std::string>();
-				createNodeFromJson(connectedId, jsonNodes, nodes);
-
-				Serial.print("\t\t\t Created Node name:");
-				Serial.println(nodes[nodes.size() - 1]->name.c_str());
-
-				auto con = Connection<DataRgb>();
-				con.toPort = outNode->in;
-
-				nodes[nodes.size() - 1]->connectOutport("rgb", con);
-
-				outNode->in->connection = nonstd::optional<Connection<DataRgb>>(con);
-			}
-
-			nodes.push_back(outNode);
+			newNode = std::make_shared<NodeOutput>(nodeJson, nodeFactory);
 		}
 
-		fillNodeFromJson(nodeJson, nodes[nodes.size() - 1]);
+		if (newNode == nullptr)
+			return nullptr;
+
+		fillNodeFromJson(nodeJson, newNode);
 
 		Serial.print("\t End Node:");
 		Serial.println(nodeID.c_str());
 		Serial.print("\t name:");
-		Serial.println(nodes[nodes.size() - 1]->name.c_str());
+		Serial.println(newNode->name.c_str());
+
+		return newNode;
 	}
 
-	void fromNetworkJson(char *json, std::vector<std::shared_ptr<INode>> &nodes)
+	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char *json)
 	{
 		Serial.println("Start parse");
 
@@ -127,8 +114,11 @@ namespace Node
 		}
 
 		if (rootObject.isNull())
-			return;
+			return std::unordered_map<std::string, std::shared_ptr<INode>>();
 
-		createNodeFromJson(rootId, jsonNodes, nodes);
+		NodeFactory factory{jsonNodes};
+		factory.createNodeById(rootId);
+
+		return factory.nodes;
 	}
 } // namespace Node

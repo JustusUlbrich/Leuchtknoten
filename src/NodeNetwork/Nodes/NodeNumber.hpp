@@ -12,7 +12,7 @@ namespace Node
 	{
 
 	public:
-		NodeNumber(/* args */);
+		explicit NodeNumber(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
 		~NodeNumber();
 
 		void eval(const Context &context, const LedContext &ledContext, int &out) override;
@@ -21,24 +21,4 @@ namespace Node
 		std::shared_ptr<OutputPort<int>> out;
 		int value;
 	};
-
-	NodeNumber::NodeNumber(/* args */)
-	{
-		out = std::make_shared<OutputPort<int>>("num", this);
-	}
-
-	NodeNumber::~NodeNumber()
-	{
-	}
-
-	void NodeNumber::eval(const Context &context, const LedContext &ledContext, int &out)
-	{
-		out = value;
-	}
-
-	void NodeNumber::connectOutport(const std::string &portID, Connection<int> &connection)
-	{
-		connection.fromPort = std::shared_ptr<OutputPort<int>>(out);
-	}
-
 } // namespace Node

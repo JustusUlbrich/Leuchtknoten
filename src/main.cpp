@@ -5,6 +5,7 @@
 #include "ESPAsyncWebServer.h"
 #include "Spiffs.h"
 
+#include <unordered_map>
 #include <string>
 
 // Nodes
@@ -35,7 +36,7 @@ enum LedMode
 uint16_t gDelay = 100;
 LedMode gMode = LedMode::all;
 
-std::vector<std::shared_ptr<Node::INode>> gNodes;
+std::unordered_map<std::string, std::shared_ptr<Node::INode>> gNodes;
 bool gNeedUpate = false;
 
 CRGB gColors[NUM_LEDS];
@@ -46,8 +47,7 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-	gNodes.clear();
-	Node::fromNetworkJson((char *)data, gNodes);
+	gNodes = Node::fromNetworkJson((char *)data);
 
 	Serial.println("Done with network parsing");
 
