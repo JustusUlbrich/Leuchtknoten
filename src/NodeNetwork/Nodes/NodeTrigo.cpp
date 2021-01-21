@@ -7,9 +7,10 @@ namespace Node
 		: INode(nodeJson, nodeFactory)
 	{
 		in = std::make_shared<InputPort<float>>("in", this);
-		out = std::make_shared<OutputPort<float>>("out", this);
+		sinOut = std::make_shared<OutputPort<float>>("sin", this);
+		cosOut = std::make_shared<OutputPort<float>>("cos", this);
+		tanOut = std::make_shared<OutputPort<float>>("tan", this);
 
-		mode = nodeJson["data"]["mode"] | 0;
 		connectInport(nodeJson, nodeFactory, in, "in");
 	}
 
@@ -27,12 +28,21 @@ namespace Node
 			value = con.fromPort->eval(context, ledContext);
 		}
 
-		if (mode == 0)
+		if (portId == "sin")
 			out = sinf(value);
+		else if(portId == "cos")
+			out = cosf(value);
+		else if(portId == "tan")
+			out = tanf(value);
 	}
 
 	void NodeTrigo::connectOutport(const std::string &portID, Connection<float> &connection)
 	{
-		connection.fromPort = std::shared_ptr<OutputPort<float>>(out);
+		if (portID == "sin")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(sinOut);
+		else if(portID == "cos")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(cosOut);
+		else if(portID == "tan")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(tanOut);
 	}
 } // namespace Node

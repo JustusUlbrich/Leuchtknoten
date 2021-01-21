@@ -19,9 +19,8 @@ namespace Node
 		void connectOutport(const std::string &portID, Connection<float> &connection) override;
 
 		std::shared_ptr<InputPort<float>> in;
-		std::shared_ptr<OutputPort<float>> out;
-
-		// TODO: enum?
-		int mode;
+		std::shared_ptr<OutputPort<float>> sinOut;
+		std::shared_ptr<OutputPort<float>> cosOut;
+		std::shared_ptr<OutputPort<float>> tanOut;
 	};
 } // namespace Node

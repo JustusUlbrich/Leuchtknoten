@@ -1,6 +1,6 @@
 #pragma once
 
-#define DEBUG_OUT 1
+// #define DEBUG_OUT 1
 // DIRTY debug
 #ifdef DEBUG_OUT
 #define debugOutln(a) (Serial.println(a))

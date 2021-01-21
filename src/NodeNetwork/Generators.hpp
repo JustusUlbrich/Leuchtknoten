@@ -96,15 +96,8 @@ namespace Node
 		return newNode;
 	}
 
-	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char *json, std::string &rootId)
+	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(JsonObject &doc, std::string &rootId)
 	{
-		debugOutln("Start parse");
-
-		DynamicJsonDocument doc(8184);
-		deserializeJson(doc, json, DeserializationOption::NestingLimit(50));
-
-		// TODO: Node string to types ?
-
 		JsonObject jsonNodes = doc["nodes"].as<JsonObject>();
 
 		debugOutln(doc["nodes"].as<std::string>().c_str());
@@ -129,5 +122,17 @@ namespace Node
 		factory.createNodeById(rootId);
 
 		return factory.nodes;
+	}
+
+	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char *json, std::string &rootId)
+	{
+		debugOutln("Start parse");
+
+		DynamicJsonDocument doc(8192);
+		deserializeJson(doc, json, DeserializationOption::NestingLimit(50));
+
+		JsonObject jsonObj = doc.as<JsonObject>();
+
+		return fromNetworkJson(jsonObj, rootId);
 	}
 } // namespace Node

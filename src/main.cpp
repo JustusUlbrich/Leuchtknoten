@@ -4,6 +4,8 @@
 #include <FastLED.h>
 #include "WiFi.h"
 #include <AsyncTCP.h>
+#include <AsyncJson.h>
+
 #include "ESPAsyncWebServer.h"
 #include "Spiffs.h"
 
@@ -49,6 +51,8 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
+	debugOutln((char *)data);
+
 	xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
 	gNodes = Node::fromNetworkJson((char *)data, gRootId);
 	xSemaphoreGive(gNetworkSemaphore);
@@ -94,15 +98,29 @@ void setup()
 		request->send(200, "text/plain", "Success!");
 	});
 
-	server.on(
-		"/api/node", HTTP_POST,
-		[](AsyncWebServerRequest *request) { request->send(200); },
-		[](...) {},
-		onUpdateNodes);
+	// server.on(
+	// 	"/api/node", HTTP_POST,
+	// 	[](AsyncWebServerRequest *request) { request->send(200); },
+	// 	[](...) {},
+	// 	onUpdateNodes);
 
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 		request->send(SPIFFS, "/index.html", String());
 	});
+
+	AsyncCallbackJsonWebHandler* nodeHandler = new AsyncCallbackJsonWebHandler("/api/node", [](AsyncWebServerRequest *request, JsonVariant &json) {
+ 		JsonObject jsonObj = json.as<JsonObject>();
+
+		xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
+		gNodes = Node::fromNetworkJson(jsonObj, gRootId);
+		xSemaphoreGive(gNetworkSemaphore);
+
+		debugOutln("Done with network parsing");
+
+		gNeedUpate = true;
+
+	}, 8192U);
+	server.addHandler(nodeHandler);
 
 	// Web
 	SPIFFS.begin();
@@ -206,7 +224,7 @@ void loop()
 	unsigned long delta = gContext.lastUpdate - currentTime;
 	gContext.elapsed += (currentTime - gContext.startTime) / 1000.f;
 
-	if (gNodes.find(gRootId) != gNodes.end() && (gNeedUpate || (false && delta > 10000000)))
+	if (gNodes.find(gRootId) != gNodes.end() && (gNeedUpate || (delta > 200)))
 	{
 		xSemaphoreTake(gNetworkSemaphore, 10 * portTICK_PERIOD_MS);
 
