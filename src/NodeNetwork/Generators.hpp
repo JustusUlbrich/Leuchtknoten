@@ -4,6 +4,8 @@
 
 #include <ArduinoJson.h>
 
+#include "../defines.h"
+
 #include "api/Port.hpp"
 #include "api/Connection.hpp"
 #include "api/ConnectionData.hpp"
@@ -16,6 +18,9 @@
 #include "nodes/NodeRgb.hpp"
 #include "nodes/NodeGradient.hpp"
 #include "nodes/NodeOutput.hpp"
+#include "nodes/NodeLookup.hpp"
+#include "nodes/NodeTrigo.hpp"
+#include "nodes/NodeMath.hpp"
 
 #include "NodeFactory.hpp"
 
@@ -32,8 +37,8 @@ namespace Node
 
 	static std::shared_ptr<INode> createNodeFromJson(const std::string &nodeID, JsonObject &jsonNodes, NodeFactory *nodeFactory)
 	{
-		Serial.print("\t Start Node:");
-		Serial.println(nodeID.c_str());
+		debugOut("\t Start Node: ");
+		debugOutln(nodeID.c_str());
 
 		// auto createChild = [&jsonNodes, &nodes](const std::string& childID) {
 		// 	createNodeFromJson(childID, jsonNodes, nodes);
@@ -54,25 +59,28 @@ namespace Node
 		}
 		else if (nodeJson["name"] == "Gradient")
 		{
-			auto gradientNode = std::make_shared<NodeGradient>(nodeJson, nodeFactory);
-
-			auto jsonGradients = nodeJson["data"]["gradient"].as<JsonArray>();
-			for (JsonVariant v : jsonGradients)
-			{
-				Node::GradientEntry e;
-				e.offset = v["offset"].as<float>();
-				e.color = DataRgb::fromHex(v["color"].as<std::string>());
-
-				gradientNode->gradient.entries.push_back(e);
-			}
-
-			// TODO: Check for connections and handle
-
-			// nodes.push_back(gradientNode);
+			newNode = std::make_shared<NodeGradient>(nodeJson, nodeFactory);
 		}
 		else if (nodeJson["name"] == "Output")
 		{
 			newNode = std::make_shared<NodeOutput>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Lookup")
+		{
+			newNode = std::make_shared<NodeLookup>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Trigo")
+		{
+			newNode = std::make_shared<NodeTrigo>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Math")
+		{
+			newNode = std::make_shared<NodeMath>(nodeJson, nodeFactory);
+		}
+		else
+		{
+			debugOut("Unknown Node: ");
+			debugOutln(jsonNodes[nodeID].as<std::string>().c_str());
 		}
 
 		if (newNode == nullptr)
@@ -80,27 +88,28 @@ namespace Node
 
 		fillNodeFromJson(nodeJson, newNode);
 
-		Serial.print("\t End Node:");
-		Serial.println(nodeID.c_str());
-		Serial.print("\t name:");
-		Serial.println(newNode->name.c_str());
+		debugOut("\t End Node:");
+		debugOutln(nodeID.c_str());
+		debugOut("\t name:");
+		debugOutln(newNode->name.c_str());
 
 		return newNode;
 	}
 
-	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char *json)
+	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char *json, std::string &rootId)
 	{
-		Serial.println("Start parse");
+		debugOutln("Start parse");
 
-		DynamicJsonDocument doc(3072);
-		deserializeJson(doc, json, DeserializationOption::NestingLimit(20));
+		DynamicJsonDocument doc(8184);
+		deserializeJson(doc, json, DeserializationOption::NestingLimit(50));
 
 		// TODO: Node string to types ?
 
 		JsonObject jsonNodes = doc["nodes"].as<JsonObject>();
 
+		debugOutln(doc["nodes"].as<std::string>().c_str());
+
 		JsonObject rootObject;
-		std::string rootId;
 
 		// Search for output node
 		for (JsonPair nodePair : doc["nodes"].as<JsonObject>())

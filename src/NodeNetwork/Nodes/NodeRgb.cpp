@@ -1,5 +1,7 @@
 #include "NodeRgb.hpp"
 
+#include "../../defines.h"
+
 namespace Node
 {
 	NodeRgb::NodeRgb(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
@@ -7,7 +9,8 @@ namespace Node
 	{
 		out = std::make_shared<OutputPort<DataRgb>>("num", this);
 
-		if (nodeJson["data"]["rgb"]) {
+		if (nodeJson["data"]["rgb"])
+		{
 			value.r = nodeJson["data"]["rgb"]["r"] | 0;
 			value.g = nodeJson["data"]["rgb"]["g"] | 0;
 			value.b = nodeJson["data"]["rgb"]["b"] | 0;
@@ -18,10 +21,10 @@ namespace Node
 	{
 	}
 
-	void NodeRgb::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
+	void NodeRgb::eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out)
 	{
-		Serial.print("\t\t eval rgb");
-		Serial.println(id);
+		debugOut("\t\t eval rgb");
+		debugOutln(id);
 
 		out = value;
 	}

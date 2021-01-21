@@ -15,7 +15,7 @@ namespace Node
 		explicit NodeRgb(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
 		~NodeRgb();
 
-		void eval(const Context &context, const LedContext &ledContext, DataRgb &out) override;
+		void eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out) override;
 		void connectOutport(const std::string &portID, Connection<DataRgb> &connection) override;
 
 		std::shared_ptr<OutputPort<DataRgb>> out;

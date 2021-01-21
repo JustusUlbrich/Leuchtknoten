@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "freertos/FreeRTOS.h"
+
 #include <FastLED.h>
 #include "WiFi.h"
 #include <AsyncTCP.h>
@@ -7,6 +9,8 @@
 
 #include <unordered_map>
 #include <string>
+
+#include "defines.h"
 
 // Nodes
 #include "NodeNetwork/api/INode.hpp"
@@ -18,13 +22,6 @@
 const char *ssid = "PrettyFlyForAWifi";
 const char *password = "***REMOVED***";
 
-// LED Setup
-#define LED_PIN 25
-#define COLOR_ORDER GRB
-#define NUM_LEDS 10
-
-#define BRIGHTNESS 64
-
 enum LedMode
 {
 	all,
@@ -33,11 +30,16 @@ enum LedMode
 	off
 };
 
+SemaphoreHandle_t gNetworkSemaphore;
+
 uint16_t gDelay = 100;
 LedMode gMode = LedMode::all;
 
+std::string gRootId = "";
 std::unordered_map<std::string, std::shared_ptr<Node::INode>> gNodes;
 bool gNeedUpate = false;
+
+Context gContext;
 
 CRGB gColors[NUM_LEDS];
 CRGB leds[NUM_LEDS];
@@ -47,18 +49,22 @@ AsyncWebServer server(80);
 
 void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 {
-	gNodes = Node::fromNetworkJson((char *)data);
+	xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
+	gNodes = Node::fromNetworkJson((char *)data, gRootId);
+	xSemaphoreGive(gNetworkSemaphore);
 
-	Serial.println("Done with network parsing");
+	debugOutln("Done with network parsing");
 
 	gNeedUpate = true;
 
-	// Serial.println((char *)data);
+	// debugOutln((char *)data);
 	request->send(200);
 }
 
 void setup()
 {
+	gNetworkSemaphore = xSemaphoreCreateBinary();
+
 	for (int i = 0; i < NUM_LEDS; i++)
 		gColors[i] = CRGB::White;
 
@@ -73,9 +79,9 @@ void setup()
 	while (WiFi.status() != WL_CONNECTED)
 	{
 		delay(500);
-		Serial.println("Connecting to WiFi..");
+		debugOutln("Connecting to WiFi..");
 	}
-	Serial.println("Connected to the WiFi network: " + WiFi.localIP().toString());
+	debugOutln("Connected to the WiFi network: " + WiFi.localIP().toString());
 
 	// API
 	server.on("/api/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -114,6 +120,10 @@ void setup()
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "content-type");
 	server.begin();
+
+	gContext.startTime = millis();
+	gContext.lastUpdate = gContext.startTime;
+	gContext.numLeds = NUM_LEDS;
 }
 
 void prideMode()
@@ -192,8 +202,15 @@ void allMode()
 
 void loop()
 {
-	if (gNodes.size() > 0 && gNeedUpate)
+	unsigned long currentTime = millis();
+	unsigned long delta = gContext.lastUpdate - currentTime;
+	gContext.elapsed += (currentTime - gContext.startTime) / 1000.f;
+
+	if (gNodes.find(gRootId) != gNodes.end() && (gNeedUpate || (false && delta > 10000000)))
 	{
+		xSemaphoreTake(gNetworkSemaphore, 10 * portTICK_PERIOD_MS);
+
+		gContext.lastUpdate = currentTime;
 		gNeedUpate = false;
 		Node::DataRgb rgb;
 		for (int i = 0; i < NUM_LEDS; i++)
@@ -201,15 +218,17 @@ void loop()
 			LedContext ledCtx;
 			ledCtx.id = i;
 
-			gNodes[0]->eval(Context(), ledCtx, rgb);
+			gNodes[gRootId]->eval(gContext, ledCtx, "rgb", rgb);
 
-			// Serial.print("Eval:");
-			// Serial.print(rgb.r);
-			// Serial.print(rgb.g);
-			// Serial.println(rgb.b);
+			// debugOut("Eval:");
+			// debugOut(rgb.r);
+			// debugOut(rgb.g);
+			// debugOutln(rgb.b);
 
 			gColors[i].setRGB(rgb.r, rgb.g, rgb.b);
 		}
+
+		xSemaphoreGive(gNetworkSemaphore);
 	}
 
 	switch (gMode)

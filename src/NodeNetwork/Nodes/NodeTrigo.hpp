@@ -8,17 +8,20 @@
 
 namespace Node
 {
-	class NodeNumber : public INode
+	class NodeTrigo : public INode
 	{
 
 	public:
-		explicit NodeNumber(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
-		~NodeNumber();
+		explicit NodeTrigo(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
+		~NodeTrigo();
 
 		void eval(const Context &context, const LedContext &ledContext, const std::string &portId, float &out) override;
 		void connectOutport(const std::string &portID, Connection<float> &connection) override;
 
+		std::shared_ptr<InputPort<float>> in;
 		std::shared_ptr<OutputPort<float>> out;
-		float value;
+
+		// TODO: enum?
+		int mode;
 	};
 } // namespace Node

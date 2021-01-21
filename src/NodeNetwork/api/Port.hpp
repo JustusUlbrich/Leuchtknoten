@@ -42,22 +42,25 @@ namespace Node
 		OutputPort(const std::string &identifier, INode *_node)
 			: identifier(identifier), node(_node)
 		{
-			Serial.printf("\t\t\t Create Port %s with Node %s \n", identifier.c_str(), node->name.c_str());
+			debugOut("\t\t\t Create Port ");
+			debugOut(identifier.c_str());
+			debugOut(" with Node ");
+			debugOutln(node->name.c_str());
 		}
 
 		T eval(const Context &context, const LedContext &ledContext)
 		{
-			Serial.print("\t\t\t Eval Port: ");
-			Serial.println(identifier.c_str());
+			debugOut("\t\t\t Eval Port: ");
+			debugOutln(identifier.c_str());
 
-			Serial.println("\t\t\t at Node: ");
-			Serial.println(node->id);
+			// debugOutln("\t\t\t at Node: ");
+			// debugOutln(node->id);
 
 			T out = T();
-			// if (node != nullptr)
-			// 	node->eval(context, ledContext, out);
-			// else
-			// 	Serial.println("\t\t\t Port node empty :(");
+			if (node != nullptr)
+				node->eval(context, ledContext, identifier, out);
+			else
+				debugOutln("\t\t\t Port node empty :(");
 			return out;
 		}
 	};
