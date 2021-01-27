@@ -16,7 +16,7 @@ namespace Node
 		explicit NodeGradient(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
 		~NodeGradient();
 
-		void eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out) override;
+		DataRgb evalRgb(const Context &context, const LedContext &ledContext);
 		void connectOutport(const std::string &portID, Connection<DataRgb> &connection) override;
 
 		std::shared_ptr<InputPort<float>> scaleIn;

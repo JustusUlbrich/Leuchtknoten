@@ -7,7 +7,7 @@
 
 namespace Node
 {
-	template <typename X>
+	template <typename T>
 	class OutputPort;
 
 	template <typename X>

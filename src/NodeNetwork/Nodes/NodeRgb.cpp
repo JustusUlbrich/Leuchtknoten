@@ -7,7 +7,7 @@ namespace Node
 	NodeRgb::NodeRgb(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
-		out = std::make_shared<OutputPort<DataRgb>>("num", this);
+		out = std::make_shared<OutputPort<DataRgb>>("num", this, [this](){return value;});
 
 		if (nodeJson["data"]["rgb"])
 		{
@@ -19,14 +19,6 @@ namespace Node
 
 	NodeRgb::~NodeRgb()
 	{
-	}
-
-	void NodeRgb::eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out)
-	{
-		debugOut("\t\t eval rgb");
-		debugOutln(id);
-
-		out = value;
 	}
 
 	void NodeRgb::connectOutport(const std::string &portID, Connection<DataRgb> &connection)

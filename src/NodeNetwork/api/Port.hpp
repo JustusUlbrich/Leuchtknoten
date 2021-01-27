@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
+
 #include "optional.hpp"
 
 #include "INode.hpp"
@@ -37,10 +39,13 @@ namespace Node
 		INode *node = nullptr;
 		std::vector<Connection<T>> connections;
 
+		typedef std::function<T(const Context&, const LedContext &ledContext)> EvalFunc;
+		const EvalFunc evalNodeFunc;
+
 		OutputPort() = delete;
 
-		OutputPort(const std::string &identifier, INode *_node)
-			: identifier(identifier), node(_node)
+		OutputPort(const std::string &identifier, INode *_node, EvalFunc _evalNodeFunc)
+			: identifier(identifier), node(_node), evalNodeFunc(_evalNodeFunc)
 		{
 			debugOut("\t\t\t Create Port ");
 			debugOut(identifier.c_str());
@@ -57,8 +62,8 @@ namespace Node
 			// debugOutln(node->id);
 
 			T out = T();
-			if (node != nullptr)
-				node->eval(context, ledContext, identifier, out);
+			if (node != nullptr && evalNodeFunc != nullptr)
+				out = evalNodeFunc(context, ledContext);
 			else
 				debugOutln("\t\t\t Port node empty :(");
 			return out;

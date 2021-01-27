@@ -7,7 +7,7 @@ namespace Node
 		: INode(nodeJson, nodeFactory)
 	{
 		scaleIn = std::make_shared<InputPort<float>>("scale", this);
-		out = std::make_shared<OutputPort<DataRgb>>("num", this);
+		out = std::make_shared<OutputPort<DataRgb>>("num", this, &NodeGradient::evalRgb);
 
 		auto jsonGradients = nodeJson["data"]["gradient"].as<JsonArray>();
 		for (JsonVariant v : jsonGradients)
@@ -26,7 +26,7 @@ namespace Node
 	{
 	}
 
-	void NodeGradient::eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out)
+	DataRgb NodeGradient::evalRgb(const Context &context, const LedContext &ledContext)
 	{
 		// float scale = 0.5;
 		// DEBUG
@@ -41,14 +41,12 @@ namespace Node
 
 		if (gradient.entries.size() == 0)
 		{
-			out = DataRgb();
-			return;
+			return DataRgb();
 		}
 
 		if (gradient.entries.size() == 1 || scale < gradient.entries[0].offset)
 		{
-			out = gradient.entries[0].color;
-			return;
+			return gradient.entries[0].color;
 		}
 
 		for (size_t i = 0; i < gradient.entries.size() - 1; i++)
@@ -62,13 +60,14 @@ namespace Node
 			// TODO: clamp and verify
 			const auto sOff = (scale - cLeft.offset) / (cRight.offset - cLeft.offset);
 
+			DataRgb out{};
 			out.r = ((1.0 - sOff) * cLeft.color.r + sOff * cRight.color.r);
 			out.g = ((1.0 - sOff) * cLeft.color.g + sOff * cRight.color.g);
 			out.b = ((1.0 - sOff) * cLeft.color.b + sOff * cRight.color.b);
-			return;
+			return out;
 		}
 
-		out = gradient.entries[gradient.entries.size() - 1].color;
+		return gradient.entries[gradient.entries.size() - 1].color;
 	}
 
 	void NodeGradient::connectOutport(const std::string &portID, Connection<DataRgb> &connection)

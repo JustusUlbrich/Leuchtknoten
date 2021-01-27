@@ -7,23 +7,41 @@ namespace Node
 	NodeLookup::NodeLookup(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
-		nodeIdOut = std::make_shared<OutputPort<float>>("nodeId", this);
-		numLedsOut = std::make_shared<OutputPort<float>>("numLeds", this);
-		elapsedOut = std::make_shared<OutputPort<float>>("elapsed", this);
+		nodeIdOut = std::make_shared<OutputPort<float>>(
+			"nodeId",
+			 this,
+			[this](const Context &c, const LedContext &lc) { return evalNodeId(c,lc); }
+		);
+		numLedsOut = std::make_shared<OutputPort<float>>(
+			"numLeds",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalNumLeds(c,lc); }
+		);
+		elapsedOut = std::make_shared<OutputPort<float>>(
+			"elapsed",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalElapsed(c,lc); }
+		);
 	}
 
 	NodeLookup::~NodeLookup()
 	{
 	}
 
-	void NodeLookup::eval(const Context &context, const LedContext &ledContext, const std::string &portId, float &out)
+
+	float NodeLookup::evalNodeId(const Context &context, const LedContext &ledContext)
 	{
-		if (portId == "nodeId")
-			out = ledContext.id;
-		else if (portId == "numLeds")
-			out = context.numLeds;
-		else if (portId == "elapsed")
-			out = context.elapsed;
+		return ledContext.id;
+	}
+
+	float NodeLookup::evalNumLeds(const Context &context, const LedContext &ledContext)
+	{
+		return context.numLeds;
+	}
+
+	float NodeLookup::evalElapsed(const Context &context, const LedContext &ledContext)
+	{
+		return context.elapsed / 1000.f;
 	}
 
 	void NodeLookup::connectOutport(const std::string &portID, Connection<float> &connection)

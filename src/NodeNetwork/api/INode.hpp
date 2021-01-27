@@ -60,9 +60,6 @@ namespace Node
 		}
 
 		// TODO: Think about refactoring this
-		virtual void eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out){};
-		virtual void eval(const Context &context, const LedContext &ledContext, const std::string &portId, float &out){};
-
 		virtual void connectOutport(const std::string &portID, Connection<DataRgb> &connection){};
 		virtual void connectOutport(const std::string &portID, Connection<float> &connection){};
 	};

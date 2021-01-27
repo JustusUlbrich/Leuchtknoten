@@ -15,7 +15,6 @@ namespace Node
 		explicit NodeNumber(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
 		~NodeNumber();
 
-		void eval(const Context &context, const LedContext &ledContext, const std::string &portId, float &out) override;
 		void connectOutport(const std::string &portID, Connection<float> &connection) override;
 
 		std::shared_ptr<OutputPort<float>> out;

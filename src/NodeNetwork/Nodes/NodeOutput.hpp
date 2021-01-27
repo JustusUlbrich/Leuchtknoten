@@ -17,7 +17,7 @@ namespace Node
 		explicit NodeOutput(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
 		~NodeOutput();
 
-		void eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out) override;
+		void eval(const Context &context, const LedContext &ledContext, DataRgb &out);
 		std::shared_ptr<InputPort<DataRgb>> in;
 	};
 } // namespace Node

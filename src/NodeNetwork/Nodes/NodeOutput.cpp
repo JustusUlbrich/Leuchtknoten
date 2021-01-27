@@ -18,7 +18,7 @@ namespace Node
 	{
 	}
 
-	void NodeOutput::eval(const Context &context, const LedContext &ledContext, const std::string &portId, DataRgb &out)
+	void NodeOutput::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
 	{
 		debugOut("\t\t eval at node: ");
 		debugOutln(name.c_str());
@@ -33,11 +33,5 @@ namespace Node
 			else
 				debugOut("\t\t\t fromPort empty :(");
 		}
-		else
-		{
-			debugOut("\t\t\t connection empty :(");
-		}
-
-		debugOutln("\t\t done eval output");
 	}
 } // namespace Node

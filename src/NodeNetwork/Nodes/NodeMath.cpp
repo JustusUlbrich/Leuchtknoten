@@ -10,10 +10,10 @@ namespace Node
 		in1 = std::make_shared<InputPort<float>>("in1", this);
 		in2 = std::make_shared<InputPort<float>>("in2", this);
 
-		addOut = std::make_shared<OutputPort<float>>("add", this);
-		subOut = std::make_shared<OutputPort<float>>("sub", this);
-		mulOut = std::make_shared<OutputPort<float>>("mul", this);
-		divOut = std::make_shared<OutputPort<float>>("div", this);
+		addOut = std::make_shared<OutputPort<float>>("add", this, &NodeMath::evalAdd);
+		subOut = std::make_shared<OutputPort<float>>("sub", this, &NodeMath::evalSub);
+		mulOut = std::make_shared<OutputPort<float>>("mul", this, &NodeMath::evalMul);
+		divOut = std::make_shared<OutputPort<float>>("div", this, &NodeMath::evalDiv);
 
 		connectInport(nodeJson, nodeFactory, in1, "in1");
 		connectInport(nodeJson, nodeFactory, in2, "in2");
@@ -23,32 +23,48 @@ namespace Node
 	{
 	}
 
-	void NodeMath::eval(const Context &context, const LedContext &ledContext, const std::string &portId, float &out)
+	float NodeMath::getIn1(const Context &context, const LedContext &ledContext)
 	{
-		out = 0;
-
-		float value1 = 0.f, value2 = 0.f;
-
+		float value = 0.f;
 		if (in1->connection.has_value())
 		{
 			auto con = in1->connection.value();
-			value1 = con.fromPort->eval(context, ledContext);
+			value = con.fromPort->eval(context, ledContext);
 		}
+		return value;
+	}
+
+	float NodeMath::getIn2(const Context &context, const LedContext &ledContext)
+	{
+		float value = 0.f;
 
 		if (in2->connection.has_value())
 		{
 			auto con = in2->connection.value();
-			value2 = con.fromPort->eval(context, ledContext);
+			value = con.fromPort->eval(context, ledContext);
 		}
+		return value;
+	}
 
-		if (portId == "add")
-			out = value1 + value2;
-		else if (portId == "sub")
-			out = value1 - value2;
-		else if (portId == "mul")
-			out = value1 * value2;
-		else if (portId == "div" && value2 != 0.f)
-			out = value1 / value2;
+	float NodeMath::evalAdd(const Context &context, const LedContext &ledContext)
+	{
+		return getIn1(context, ledContext) + getIn2(context, ledContext);
+	}
+
+	float NodeMath::evalSub(const Context &context, const LedContext &ledContext)
+	{
+		return getIn1(context, ledContext) - getIn2(context, ledContext);
+	}
+
+	float NodeMath::evalMul(const Context &context, const LedContext &ledContext)
+	{
+		return getIn1(context, ledContext) * getIn2(context, ledContext);
+	}
+
+	float NodeMath::evalDiv(const Context &context, const LedContext &ledContext)
+	{
+		auto val2 = getIn2(context, ledContext);
+		return getIn1(context, ledContext) / (val2 != 0.f ? val2 : 0.0001f);
 	}
 
 	void NodeMath::connectOutport(const std::string &portID, Connection<float> &connection)
