@@ -46,6 +46,7 @@
 		"typeinfo": "cpp",
 		"valarray": "cpp",
 		"string": "cpp",
-		"optional": "cpp"
+		"optional": "cpp",
+		"random": "cpp"
 	}
 }

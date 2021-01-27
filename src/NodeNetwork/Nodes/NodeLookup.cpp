@@ -9,25 +9,21 @@ namespace Node
 	{
 		nodeIdOut = std::make_shared<OutputPort<float>>(
 			"nodeId",
-			 this,
-			[this](const Context &c, const LedContext &lc) { return evalNodeId(c,lc); }
-		);
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalNodeId(c, lc); });
 		numLedsOut = std::make_shared<OutputPort<float>>(
 			"numLeds",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalNumLeds(c,lc); }
-		);
+			[this](const Context &c, const LedContext &lc) { return evalNumLeds(c, lc); });
 		elapsedOut = std::make_shared<OutputPort<float>>(
 			"elapsed",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalElapsed(c,lc); }
-		);
+			[this](const Context &c, const LedContext &lc) { return evalElapsed(c, lc); });
 	}
 
 	NodeLookup::~NodeLookup()
 	{
 	}
-
 
 	float NodeLookup::evalNodeId(const Context &context, const LedContext &ledContext)
 	{

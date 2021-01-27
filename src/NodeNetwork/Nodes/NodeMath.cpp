@@ -10,10 +10,25 @@ namespace Node
 		in1 = std::make_shared<InputPort<float>>("in1", this);
 		in2 = std::make_shared<InputPort<float>>("in2", this);
 
-		addOut = std::make_shared<OutputPort<float>>("add", this, &NodeMath::evalAdd);
-		subOut = std::make_shared<OutputPort<float>>("sub", this, &NodeMath::evalSub);
-		mulOut = std::make_shared<OutputPort<float>>("mul", this, &NodeMath::evalMul);
-		divOut = std::make_shared<OutputPort<float>>("div", this, &NodeMath::evalDiv);
+		addOut = std::make_shared<OutputPort<float>>(
+			"add",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalAdd(c, lc); });
+
+		subOut = std::make_shared<OutputPort<float>>(
+			"sub",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalSub(c, lc); });
+
+		mulOut = std::make_shared<OutputPort<float>>(
+			"mul",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalMul(c, lc); });
+
+		divOut = std::make_shared<OutputPort<float>>(
+			"div",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalDiv(c, lc); });
 
 		connectInport(nodeJson, nodeFactory, in1, "in1");
 		connectInport(nodeJson, nodeFactory, in2, "in2");

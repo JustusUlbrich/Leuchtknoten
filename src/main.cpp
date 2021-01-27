@@ -38,6 +38,7 @@ uint16_t gDelay = 100;
 LedMode gMode = LedMode::all;
 
 std::string gRootId = "";
+std::shared_ptr<Node::NodeOutput> gRootNode;
 std::unordered_map<std::string, std::shared_ptr<Node::INode>> gNodes;
 bool gNeedUpate = false;
 
@@ -55,6 +56,7 @@ void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, si
 
 	xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
 	gNodes = Node::fromNetworkJson((char *)data, gRootId);
+	gRootNode = std::static_pointer_cast<Node::NodeOutput>(gNodes[gRootId]);
 	xSemaphoreGive(gNetworkSemaphore);
 
 	debugOutln("Done with network parsing");
@@ -108,18 +110,19 @@ void setup()
 		request->send(SPIFFS, "/index.html", String());
 	});
 
-	AsyncCallbackJsonWebHandler* nodeHandler = new AsyncCallbackJsonWebHandler("/api/node", [](AsyncWebServerRequest *request, JsonVariant &json) {
- 		JsonObject jsonObj = json.as<JsonObject>();
+	AsyncCallbackJsonWebHandler *nodeHandler = new AsyncCallbackJsonWebHandler(
+		"/api/node", [](AsyncWebServerRequest *request, JsonVariant &json) {
+			JsonObject jsonObj = json.as<JsonObject>();
 
-		xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
-		gNodes = Node::fromNetworkJson(jsonObj, gRootId);
-		xSemaphoreGive(gNetworkSemaphore);
+			xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
+			gNodes = Node::fromNetworkJson(jsonObj, gRootId);
+			xSemaphoreGive(gNetworkSemaphore);
 
-		debugOutln("Done with network parsing");
+			debugOutln("Done with network parsing");
 
-		gNeedUpate = true;
-
-	}, 8192U);
+			gNeedUpate = true;
+		},
+		8192U);
 	server.addHandler(nodeHandler);
 
 	// Web
@@ -236,7 +239,7 @@ void loop()
 			LedContext ledCtx;
 			ledCtx.id = i;
 
-			gNodes[gRootId]->eval(gContext, ledCtx, "rgb", rgb);
+			rgb = gRootNode->eval(gContext, ledCtx);
 
 			// debugOut("Eval:");
 			// debugOut(rgb.r);

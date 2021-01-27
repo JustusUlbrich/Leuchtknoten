@@ -18,7 +18,7 @@ namespace Node
 	{
 	}
 
-	void NodeOutput::eval(const Context &context, const LedContext &ledContext, DataRgb &out)
+	DataRgb NodeOutput::eval(const Context &context, const LedContext &ledContext)
 	{
 		debugOut("\t\t eval at node: ");
 		debugOutln(name.c_str());
@@ -29,9 +29,11 @@ namespace Node
 
 			auto con = *in->connection;
 			if (con.fromPort != nullptr)
-				out = con.fromPort->eval(context, ledContext);
+				return con.fromPort->eval(context, ledContext);
 			else
 				debugOut("\t\t\t fromPort empty :(");
+
+			return DataRgb{};
 		}
 	}
 } // namespace Node

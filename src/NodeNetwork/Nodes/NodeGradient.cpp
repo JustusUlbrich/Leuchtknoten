@@ -7,7 +7,10 @@ namespace Node
 		: INode(nodeJson, nodeFactory)
 	{
 		scaleIn = std::make_shared<InputPort<float>>("scale", this);
-		out = std::make_shared<OutputPort<DataRgb>>("num", this, &NodeGradient::evalRgb);
+		out = std::make_shared<OutputPort<DataRgb>>(
+			"num",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalRgb(c, lc); });
 
 		auto jsonGradients = nodeJson["data"]["gradient"].as<JsonArray>();
 		for (JsonVariant v : jsonGradients)

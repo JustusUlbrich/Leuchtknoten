@@ -7,9 +7,18 @@ namespace Node
 		: INode(nodeJson, nodeFactory)
 	{
 		in = std::make_shared<InputPort<float>>("in", this);
-		sinOut = std::make_shared<OutputPort<float>>("sin", this, &NodeTrigo::evalSin);
-		cosOut = std::make_shared<OutputPort<float>>("cos", this, &NodeTrigo::evalCos);
-		tanOut = std::make_shared<OutputPort<float>>("tan", this, &NodeTrigo::evalTan);
+		sinOut = std::make_shared<OutputPort<float>>(
+			"sin",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalSin(c, lc); });
+		cosOut = std::make_shared<OutputPort<float>>(
+			"cos",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalCos(c, lc); });
+		tanOut = std::make_shared<OutputPort<float>>(
+			"tan",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalTan(c, lc); });
 
 		connectInport(nodeJson, nodeFactory, in, "in");
 	}
@@ -50,9 +59,9 @@ namespace Node
 	{
 		if (portID == "sin")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(sinOut);
-		else if(portID == "cos")
+		else if (portID == "cos")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(cosOut);
-		else if(portID == "tan")
+		else if (portID == "tan")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(tanOut);
 	}
 } // namespace Node
