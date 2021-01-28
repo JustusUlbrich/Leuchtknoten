@@ -121,6 +121,9 @@ namespace Node
 		NodeFactory factory{jsonNodes};
 		factory.createNodeById(rootId);
 
+		debugOut(rootId.c_str());
+		debugOutln(" created as root");
+
 		return factory.nodes;
 	}
 

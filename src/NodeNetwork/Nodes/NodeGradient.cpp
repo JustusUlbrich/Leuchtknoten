@@ -33,7 +33,7 @@ namespace Node
 	{
 		// float scale = 0.5;
 		// DEBUG
-		float scale = ledContext.id / 10.0f;
+		float scale = ledContext.id / (float)context.numLeds;
 		// END DEBUG
 
 		if (scaleIn->connection.has_value())

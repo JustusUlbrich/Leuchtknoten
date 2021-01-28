@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <string>
 
+#include "FastLED_RGBW.h"
 #include "defines.h"
 
 // Nodes
@@ -38,44 +39,30 @@ uint16_t gDelay = 100;
 LedMode gMode = LedMode::all;
 
 std::string gRootId = "";
-std::shared_ptr<Node::NodeOutput> gRootNode;
+std::shared_ptr<Node::NodeOutput> gRootNode = nullptr;
 std::unordered_map<std::string, std::shared_ptr<Node::INode>> gNodes;
 bool gNeedUpate = false;
 
 Context gContext;
 
-CRGB gColors[NUM_LEDS];
-CRGB leds[NUM_LEDS];
+CRGBW gColors[NUM_LEDS];
+CRGBW leds[NUM_LEDS];
 
 // Http Server
 AsyncWebServer server(80);
-
-void onUpdateNodes(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
-{
-	debugOutln((char *)data);
-
-	xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
-	gNodes = Node::fromNetworkJson((char *)data, gRootId);
-	gRootNode = std::static_pointer_cast<Node::NodeOutput>(gNodes[gRootId]);
-	xSemaphoreGive(gNetworkSemaphore);
-
-	debugOutln("Done with network parsing");
-
-	gNeedUpate = true;
-
-	// debugOutln((char *)data);
-	request->send(200);
-}
 
 void setup()
 {
 	gNetworkSemaphore = xSemaphoreCreateBinary();
 
 	for (int i = 0; i < NUM_LEDS; i++)
+	{
 		gColors[i] = CRGB::White;
+		gColors[i].w = 0;
+	}
 
 	delay(2000); // sanity delay
-	FastLED.addLeds<WS2812, LED_PIN, GRB>(leds, NUM_LEDS);
+	FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>((CRGB *)&leds[0], getRGBWsize(NUM_LEDS));
 
 	FastLED.setBrightness(BRIGHTNESS);
 
@@ -100,12 +87,6 @@ void setup()
 		request->send(200, "text/plain", "Success!");
 	});
 
-	// server.on(
-	// 	"/api/node", HTTP_POST,
-	// 	[](AsyncWebServerRequest *request) { request->send(200); },
-	// 	[](...) {},
-	// 	onUpdateNodes);
-
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
 		request->send(SPIFFS, "/index.html", String());
 	});
@@ -116,6 +97,7 @@ void setup()
 
 			xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
 			gNodes = Node::fromNetworkJson(jsonObj, gRootId);
+			gRootNode = std::static_pointer_cast<Node::NodeOutput>(gNodes[gRootId]);
 			xSemaphoreGive(gNetworkSemaphore);
 
 			debugOutln("Done with network parsing");
@@ -185,7 +167,8 @@ void prideMode()
 		uint16_t pixelnumber = i;
 		pixelnumber = (NUM_LEDS - 1) - pixelnumber;
 
-		nblend(leds[pixelnumber], newcolor, 64);
+		CRGB oldcolor = leds[pixelnumber].toCRGB();
+		nblend(oldcolor, newcolor, 64);
 	}
 }
 
@@ -227,7 +210,7 @@ void loop()
 	unsigned long delta = gContext.lastUpdate - currentTime;
 	gContext.elapsed += (currentTime - gContext.startTime) / 1000.f;
 
-	if (gNodes.find(gRootId) != gNodes.end() && (gNeedUpate || (delta > 200)))
+	if (gRootNode != nullptr && (gNeedUpate || (delta > 20)))
 	{
 		xSemaphoreTake(gNetworkSemaphore, 10 * portTICK_PERIOD_MS);
 
@@ -241,13 +224,15 @@ void loop()
 
 			rgb = gRootNode->eval(gContext, ledCtx);
 
-			// debugOut("Eval:");
-			// debugOut(rgb.r);
-			// debugOut(rgb.g);
-			// debugOutln(rgb.b);
+			//debugOut(rgb.r);
+			//debugOut(rgb.g);
+			//debugOutln(rgb.b);
 
-			gColors[i].setRGB(rgb.r, rgb.g, rgb.b);
+			gColors[i].r = rgb.r;
+			gColors[i].g = rgb.g;
+			gColors[i].b = rgb.b;
 		}
+		debugOut("Eval End");
 
 		xSemaphoreGive(gNetworkSemaphore);
 	}
