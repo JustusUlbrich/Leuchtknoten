@@ -7,7 +7,7 @@ namespace Node
 		: INode(nodeJson, nodeFactory)
 	{
 		scaleIn = std::make_shared<InputPort<float>>("scale", this);
-		out = std::make_shared<OutputPort<DataRgb>>(
+		out = std::make_shared<OutputPort<CRGB>>(
 			"num",
 			this,
 			[this](const Context &c, const LedContext &lc) { return evalRgb(c, lc); });
@@ -17,7 +17,10 @@ namespace Node
 		{
 			Node::GradientEntry e;
 			e.offset = v["offset"].as<float>();
-			e.color = DataRgb::fromHex(v["color"].as<std::string>());
+
+			uint32_t data = (uint32_t)strtol(v["color"].as<std::string>().substr(1).c_str(), NULL, 16);
+
+			e.color = CRGB{data};
 
 			gradient.entries.push_back(e);
 		}
@@ -29,7 +32,7 @@ namespace Node
 	{
 	}
 
-	DataRgb NodeGradient::evalRgb(const Context &context, const LedContext &ledContext)
+	CRGB NodeGradient::evalRgb(const Context &context, const LedContext &ledContext)
 	{
 		// float scale = 0.5;
 		// DEBUG
@@ -44,7 +47,7 @@ namespace Node
 
 		if (gradient.entries.size() == 0)
 		{
-			return DataRgb();
+			return CRGB::Black;
 		}
 
 		if (gradient.entries.size() == 1 || scale < gradient.entries[0].offset)
@@ -63,7 +66,7 @@ namespace Node
 			// TODO: clamp and verify
 			const auto sOff = (scale - cLeft.offset) / (cRight.offset - cLeft.offset);
 
-			DataRgb out{};
+			CRGB out{};
 			out.r = ((1.0 - sOff) * cLeft.color.r + sOff * cRight.color.r);
 			out.g = ((1.0 - sOff) * cLeft.color.g + sOff * cRight.color.g);
 			out.b = ((1.0 - sOff) * cLeft.color.b + sOff * cRight.color.b);
@@ -73,9 +76,9 @@ namespace Node
 		return gradient.entries[gradient.entries.size() - 1].color;
 	}
 
-	void NodeGradient::connectOutport(const std::string &portID, Connection<DataRgb> &connection)
+	void NodeGradient::connectOutport(const std::string &portID, Connection<CRGB> &connection)
 	{
-		connection.fromPort = std::shared_ptr<OutputPort<DataRgb>>(out);
+		connection.fromPort = std::shared_ptr<OutputPort<CRGB>>(out);
 	}
 
 } // namespace Node

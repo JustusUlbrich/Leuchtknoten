@@ -9,18 +9,19 @@
 #include "api/Port.hpp"
 #include "api/Connection.hpp"
 #include "api/ConnectionData.hpp"
-#include "api/NodeData.hpp"
-#include "api/DataRgb.hpp"
 #include "api/DataGradient.hpp"
 
 #include "nodes/NodeTypes.hpp"
 #include "nodes/NodeNumber.hpp"
 #include "nodes/NodeRgb.hpp"
+#include "nodes/NodeSetHSV.hpp"
 #include "nodes/NodeGradient.hpp"
+#include "nodes/NodeMix.hpp"
 #include "nodes/NodeOutput.hpp"
 #include "nodes/NodeLookup.hpp"
 #include "nodes/NodeTrigo.hpp"
 #include "nodes/NodeMath.hpp"
+#include "nodes/NodeMathAdv.hpp"
 
 #include "NodeFactory.hpp"
 
@@ -76,6 +77,18 @@ namespace Node
 		else if (nodeJson["name"] == "Math")
 		{
 			newNode = std::make_shared<NodeMath>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "MathAdv")
+		{
+			newNode = std::make_shared<NodeMathAdv>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Mix")
+		{
+			newNode = std::make_shared<NodeMix>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "SetHSV")
+		{
+			newNode = std::make_shared<NodeSetHSV>(nodeJson, nodeFactory);
 		}
 		else
 		{

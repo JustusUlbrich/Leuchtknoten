@@ -1,17 +1,14 @@
 #pragma once
-
+#include <FastLED.h>
 #include <string>
 #include <vector>
-
-#include "DataRgb.hpp"
 
 namespace Node
 {
 	struct GradientEntry
 	{
 		float offset;
-		// TODO: maybe use rgb here
-		DataRgb color;
+		CRGB color;
 	};
 
 	struct DataGradient

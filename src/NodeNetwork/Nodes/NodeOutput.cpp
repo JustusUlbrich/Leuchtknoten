@@ -9,7 +9,7 @@ namespace Node
 	NodeOutput::NodeOutput(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
-		in = std::make_shared<InputPort<DataRgb>>("rgb", this);
+		in = std::make_shared<InputPort<CRGB>>("rgb", this);
 
 		connectInport(nodeJson, nodeFactory, in, "rgb");
 	}
@@ -18,7 +18,7 @@ namespace Node
 	{
 	}
 
-	DataRgb NodeOutput::eval(const Context &context, const LedContext &ledContext)
+	CRGB NodeOutput::eval(const Context &context, const LedContext &ledContext)
 	{
 		debugOut("\t\t eval at node: ");
 		debugOutln(name.c_str());
@@ -33,7 +33,7 @@ namespace Node
 			else
 				debugOut("\t\t\t fromPort empty :(");
 
-			return DataRgb{};
+			return CRGB::Black;
 		}
 	}
 } // namespace Node

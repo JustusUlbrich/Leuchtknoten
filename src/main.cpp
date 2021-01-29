@@ -103,6 +103,8 @@ void setup()
 			debugOutln("Done with network parsing");
 
 			gNeedUpate = true;
+
+			request->send(200, "text/plain", "Success!");
 		},
 		8192U);
 	server.addHandler(nodeHandler);
@@ -216,21 +218,16 @@ void loop()
 
 		gContext.lastUpdate = currentTime;
 		gNeedUpate = false;
-		Node::DataRgb rgb;
 		for (int i = 0; i < NUM_LEDS; i++)
 		{
 			LedContext ledCtx;
 			ledCtx.id = i;
 
-			rgb = gRootNode->eval(gContext, ledCtx);
+			gColors[i] = gRootNode->eval(gContext, ledCtx);
 
 			//debugOut(rgb.r);
 			//debugOut(rgb.g);
 			//debugOutln(rgb.b);
-
-			gColors[i].r = rgb.r;
-			gColors[i].g = rgb.g;
-			gColors[i].b = rgb.b;
 		}
 		debugOut("Eval End");
 

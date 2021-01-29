@@ -1,5 +1,6 @@
 #pragma once
 
+#include <FastLED.h>
 #include <memory>
 #include <vector>
 #include "optional.hpp"
@@ -9,12 +10,10 @@
 #include <ArduinoJson.h>
 
 #include "Connection.hpp"
-#include "DataRgb.hpp"
+
 #include "../NodeFactory.hpp"
 #include "../../context.hpp"
 #include "../../defines.h"
-
-// #include "NodeData.hpp"
 
 namespace Node
 {
@@ -23,7 +22,6 @@ namespace Node
 	public:
 		// TODO: private?
 		int id = -1;
-		// NodeData data;
 		std::vector<int> position;
 		std::string name = "";
 
@@ -60,7 +58,7 @@ namespace Node
 		}
 
 		// TODO: Think about refactoring this
-		virtual void connectOutport(const std::string &portID, Connection<DataRgb> &connection){};
+		virtual void connectOutport(const std::string &portID, Connection<CRGB> &connection){};
 		virtual void connectOutport(const std::string &portID, Connection<float> &connection){};
 	};
 
