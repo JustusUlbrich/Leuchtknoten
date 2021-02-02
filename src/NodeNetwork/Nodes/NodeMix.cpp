@@ -49,11 +49,11 @@ namespace Node
 			return c1;
 
 		if (scale >= 1.f)
-			return c1;
+			return c2;
 
-		c1.r = scale * c1.r + (1.f - scale) * c2.r;
-		c1.g = scale * c1.g + (1.f - scale) * c2.g;
-		c1.b = scale * c1.b + (1.f - scale) * c2.b;
+		c1.r = scale * c2.r + (1.f - scale) * c1.r;
+		c1.g = scale * c2.g + (1.f - scale) * c1.g;
+		c1.b = scale * c2.b + (1.f - scale) * c1.b;
 
 		return c1;
 	}

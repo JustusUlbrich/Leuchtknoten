@@ -106,19 +106,19 @@ void setup()
 
 			request->send(200, "text/plain", "Success!");
 		},
-		8192U);
+		16384U);
 	server.addHandler(nodeHandler);
 
 	AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(
-		"/api/node", [](AsyncWebServerRequest *request, JsonVariant &json) {
+		"/api/nodeupdate", [](AsyncWebServerRequest *request, JsonVariant &json) {
 			JsonObject jsonObj = json.as<JsonObject>();
 			auto nodeId = jsonObj["NodeId"].as<std::string>();
-			auto jsonValue = jsonObj["Value"].as<JsonObject>();
+			auto jsonValue = jsonObj["Data"].as<JsonObject>();
 
 			xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
 
 			auto toUpdate = gNodes.find(nodeId);
-        	if (toUpdate != gNodes.end())
+			if (toUpdate != gNodes.end())
 				toUpdate->second->updateValue(jsonValue);
 			xSemaphoreGive(gNetworkSemaphore);
 
@@ -234,7 +234,7 @@ void loop()
 	unsigned long delta = gContext.lastUpdate - currentTime;
 	gContext.elapsed += (currentTime - gContext.startTime) / 1000.f;
 
-	if (gRootNode != nullptr && (gNeedUpate || (delta > 20)))
+	if (gRootNode != nullptr && (gNeedUpate || (delta > 0)))
 	{
 		xSemaphoreTake(gNetworkSemaphore, 10 * portTICK_PERIOD_MS);
 

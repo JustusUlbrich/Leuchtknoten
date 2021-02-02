@@ -15,7 +15,7 @@ namespace Node
 		explicit NodeNumber(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
 		~NodeNumber();
 
-		void updateValue(const ArduinoJson::JsonObject &nodeJson) override;
+		void updateValue(const ArduinoJson::JsonObject &nodeData) override;
 
 		void connectOutport(const std::string &portID, Connection<float> &connection) override;
 

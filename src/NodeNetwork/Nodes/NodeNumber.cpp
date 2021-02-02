@@ -8,8 +8,7 @@ namespace Node
 		out = std::make_shared<OutputPort<float>>(
 			"num",
 			this,
-			[this](const Context& c, const LedContext& lc){return value;}
-		);
+			[this](const Context &c, const LedContext &lc) { return value; });
 
 		value = nodeJson["data"]["num"] | 0.f;
 	}
@@ -18,9 +17,9 @@ namespace Node
 	{
 	}
 
-	void NodeNumber::updateValue(const ArduinoJson::JsonObject &nodeJson)
+	void NodeNumber::updateValue(const ArduinoJson::JsonObject &nodeData)
 	{
-		value = nodeJson["data"]["num"] | 0.f;
+		value = nodeData["num"] | 0.f;
 	}
 
 	void NodeNumber::connectOutport(const std::string &portID, Connection<float> &connection)

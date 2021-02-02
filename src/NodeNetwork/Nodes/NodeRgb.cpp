@@ -24,13 +24,13 @@ namespace Node
 	{
 	}
 
-	void NodeRgb::updateValue(const ArduinoJson::JsonObject &nodeJson)
+	void NodeRgb::updateValue(const ArduinoJson::JsonObject &nodeData)
 	{
-		if (nodeJson["data"]["rgb"])
+		if (nodeData["rgb"])
 		{
-			value.r = nodeJson["data"]["rgb"]["r"] | 0;
-			value.g = nodeJson["data"]["rgb"]["g"] | 0;
-			value.b = nodeJson["data"]["rgb"]["b"] | 0;
+			value.r = nodeData["rgb"]["r"] | 0;
+			value.g = nodeData["rgb"]["g"] | 0;
+			value.b = nodeData["rgb"]["b"] | 0;
 		}
 	}
 

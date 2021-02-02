@@ -59,8 +59,7 @@ namespace Node
 
 	float NodeMathAdv::evalMod(const Context &context, const LedContext &ledContext)
 	{
-		int mod = getIn2(context, ledContext);
-		return ((int)getIn1(context, ledContext)) % mod;
+		return fmod(getIn1(context, ledContext), getIn2(context, ledContext));
 	}
 
 	void NodeMathAdv::connectOutport(const std::string &portID, Connection<float> &connection)
