@@ -11,7 +11,6 @@
 #include "api/ConnectionData.hpp"
 #include "api/DataGradient.hpp"
 
-#include "nodes/NodeTypes.hpp"
 #include "nodes/NodeNumber.hpp"
 #include "nodes/NodeRgb.hpp"
 #include "nodes/NodeSetHSV.hpp"

@@ -57,6 +57,8 @@ namespace Node
 			}
 		}
 
+		virtual void updateValue(const ArduinoJson::JsonObject &nodeJson) {};
+
 		// TODO: Think about refactoring this
 		virtual void connectOutport(const std::string &portID, Connection<CRGB> &connection){};
 		virtual void connectOutport(const std::string &portID, Connection<float> &connection){};

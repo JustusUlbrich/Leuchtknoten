@@ -18,6 +18,11 @@ namespace Node
 	{
 	}
 
+	void NodeNumber::updateValue(const ArduinoJson::JsonObject &nodeJson)
+	{
+		value = nodeJson["data"]["num"] | 0.f;
+	}
+
 	void NodeNumber::connectOutport(const std::string &portID, Connection<float> &connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<float>>(out);

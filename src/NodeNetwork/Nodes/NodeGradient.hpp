@@ -17,6 +17,8 @@ namespace Node
 		~NodeGradient();
 
 		CRGB evalRgb(const Context &context, const LedContext &ledContext);
+
+		void updateValue(const ArduinoJson::JsonObject &nodeJson) override;
 		void connectOutport(const std::string &portID, Connection<CRGB> &connection) override;
 
 		std::shared_ptr<InputPort<float>> scaleIn;

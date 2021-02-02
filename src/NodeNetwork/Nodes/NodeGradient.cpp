@@ -76,6 +76,23 @@ namespace Node
 		return gradient.entries[gradient.entries.size() - 1].color;
 	}
 
+	void NodeGradient::updateValue(const ArduinoJson::JsonObject &nodeJson)
+	{
+		auto jsonGradients = nodeJson["data"]["gradient"].as<JsonArray>();
+		for (JsonVariant v : jsonGradients)
+		{
+			Node::GradientEntry e;
+			e.offset = v["offset"].as<float>();
+
+			uint32_t data = (uint32_t)strtol(v["color"].as<std::string>().substr(1).c_str(), NULL, 16);
+
+			e.color = CRGB{data};
+
+			gradient.entries.push_back(e);
+		}
+	}
+
+
 	void NodeGradient::connectOutport(const std::string &portID, Connection<CRGB> &connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<CRGB>>(out);

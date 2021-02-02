@@ -24,6 +24,16 @@ namespace Node
 	{
 	}
 
+	void NodeRgb::updateValue(const ArduinoJson::JsonObject &nodeJson)
+	{
+		if (nodeJson["data"]["rgb"])
+		{
+			value.r = nodeJson["data"]["rgb"]["r"] | 0;
+			value.g = nodeJson["data"]["rgb"]["g"] | 0;
+			value.b = nodeJson["data"]["rgb"]["b"] | 0;
+		}
+	}
+
 	void NodeRgb::connectOutport(const std::string &portID, Connection<CRGB> &connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<CRGB>>(out);

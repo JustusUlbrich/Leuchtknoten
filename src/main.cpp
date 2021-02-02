@@ -109,6 +109,28 @@ void setup()
 		8192U);
 	server.addHandler(nodeHandler);
 
+	AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(
+		"/api/node", [](AsyncWebServerRequest *request, JsonVariant &json) {
+			JsonObject jsonObj = json.as<JsonObject>();
+			auto nodeId = jsonObj["NodeId"].as<std::string>();
+			auto jsonValue = jsonObj["Value"].as<JsonObject>();
+
+			xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
+
+			auto toUpdate = gNodes.find(nodeId);
+        	if (toUpdate != gNodes.end())
+				toUpdate->second->updateValue(jsonValue);
+			xSemaphoreGive(gNetworkSemaphore);
+
+			debugOutln("Done with update");
+
+			gNeedUpate = true;
+
+			request->send(200, "text/plain", "Success!");
+		},
+		1024U);
+	server.addHandler(updateHandler);
+
 	// Web
 	SPIFFS.begin();
 	server.serveStatic("/", SPIFFS, "/");
