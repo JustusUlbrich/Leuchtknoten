@@ -53,7 +53,7 @@ namespace Node
 			debugOutln(node->name.c_str());
 		}
 
-		T eval(const Context &context, const LedContext &ledContext)
+		inline T eval(const Context &context, const LedContext &ledContext)
 		{
 			debugOut("\t\t\t Eval Port: ");
 			debugOutln(identifier.c_str());

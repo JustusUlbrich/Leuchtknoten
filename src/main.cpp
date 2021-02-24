@@ -240,16 +240,17 @@ void loop()
 
 		gContext.lastUpdate = currentTime;
 		gNeedUpate = false;
+
+		LedContext ledCtx;
+		ledCtx.id = -1;
+		for(auto& node : gNodes)
+			node.second->update(delta, gContext, ledCtx);
+
 		for (int i = 0; i < NUM_LEDS; i++)
 		{
-			LedContext ledCtx;
 			ledCtx.id = i;
 
 			gColors[i] = gRootNode->eval(gContext, ledCtx);
-
-			//debugOut(rgb.r);
-			//debugOut(rgb.g);
-			//debugOutln(rgb.b);
 		}
 		debugOut("Eval End");
 

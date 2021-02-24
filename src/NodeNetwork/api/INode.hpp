@@ -57,11 +57,14 @@ namespace Node
 			}
 		}
 
+		virtual void update(const float delta, const Context &context, const LedContext &ledContext) {};
+
 		virtual void updateValue(const ArduinoJson::JsonObject &nodeData){};
 
 		// TODO: Think about refactoring this
 		virtual void connectOutport(const std::string &portID, Connection<CRGB> &connection){};
 		virtual void connectOutport(const std::string &portID, Connection<float> &connection){};
+		virtual void connectOutport(const std::string &portID, Connection<bool> &connection){};
 	};
 
 } // namespace Node

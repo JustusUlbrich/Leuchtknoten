@@ -32,8 +32,8 @@ namespace Node
 				return con.fromPort->eval(context, ledContext);
 			else
 				debugOut("\t\t\t fromPort empty :(");
-
-			return CRGB::Black;
 		}
+
+		return CRGB::Black;
 	}
 } // namespace Node
