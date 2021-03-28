@@ -21,6 +21,8 @@
 #include "nodes/NodeTrigo.hpp"
 #include "nodes/NodeMath.hpp"
 #include "nodes/NodeMathAdv.hpp"
+#include "nodes/NodeAnimNumber.hpp"
+#include "nodes/NodeBool.hpp"
 
 #include "NodeFactory.hpp"
 
@@ -88,6 +90,15 @@ namespace Node
 		else if (nodeJson["name"] == "SetHSV")
 		{
 			newNode = std::make_shared<NodeSetHSV>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Bool")
+		{
+			newNode = std::make_shared<NodeBool>(nodeJson, nodeFactory);
+			debugOut("\t Bool Node");
+		}
+		else if (nodeJson["name"] == "AnimNumber")
+		{
+			newNode = std::make_shared<NodeAnimNumber>(nodeJson, nodeFactory);
 		}
 		else
 		{

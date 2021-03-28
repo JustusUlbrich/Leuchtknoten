@@ -12,27 +12,22 @@ namespace Node
 			"out",
 			this,
 			[this](const Context &c, const LedContext &lc) { return eval(c, lc); });
+
+		connectInport(nodeJson, nodeFactory, reset, "reset");
+		connectInport(nodeJson, nodeFactory, delay, "delay");
 	}
 
 	NodeAnimNumber::~NodeAnimNumber()
 	{
 	}
 
-	void NodeAnimNumber::update(const float delta, const Context &context, const LedContext &ledContext)
+	void NodeAnimNumber::preEval(const float delta, const Context &context, const LedContext &ledContext)
 	{
 		if (getReset(context, ledContext))
-		{
 			t = 0.f;
-			return;
-		}
-
-		if (t >= 1.f)
-			return;
-
-		t += delta;
-		t = min(t, 1.0f);
+		else
+			t += delta;
 	}
-
 
 	float NodeAnimNumber::getDelay(const Context &context, const LedContext &ledContext)
 	{
@@ -62,7 +57,7 @@ namespace Node
 
 	float NodeAnimNumber::eval(const Context &context, const LedContext &ledContext)
 	{
-		return t / getDelay(context, ledContext);
+		return min(t / getDelay(context, ledContext), 1.0f);
 	}
 
 	void NodeAnimNumber::connectOutport(const std::string &portID, Connection<float> &connection)

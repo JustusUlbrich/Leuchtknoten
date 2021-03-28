@@ -20,18 +20,19 @@ namespace Node
 
 	CRGB NodeOutput::eval(const Context &context, const LedContext &ledContext)
 	{
-		debugOut("\t\t eval at node: ");
-		debugOutln(name.c_str());
+		// debugOut("\t\t eval at node: ");
+		// debugOutln(name.c_str());
 
 		if (in->connection)
 		{
-			debugOut("\t\t\t eval connection");
+			// debugOut("\t\t\t eval connection");
 
 			auto con = *in->connection;
 			if (con.fromPort != nullptr)
 				return con.fromPort->eval(context, ledContext);
-			else
-				debugOut("\t\t\t fromPort empty :(");
+			
+			/* else
+				debugOut("\t\t\t fromPort empty :("); */
 		}
 
 		return CRGB::Black;

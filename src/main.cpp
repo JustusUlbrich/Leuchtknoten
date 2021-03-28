@@ -15,6 +15,12 @@
 #include "FastLED_RGBW.h"
 #include "defines.h"
 
+#define SerialMon Serial
+#define APPLEMIDI_DEBUG SerialMon
+#include <AppleMIDI.h>
+
+APPLEMIDI_CREATE_DEFAULTSESSION_INSTANCE();
+
 // Nodes
 #include "NodeNetwork/api/INode.hpp"
 #include <ArduinoJson.h>
@@ -46,7 +52,14 @@ bool gNeedUpate = false;
 Context gContext;
 
 CRGBW gColors[NUM_LEDS];
+
+#ifdef LED_USE_WHITE
 CRGBW leds[NUM_LEDS];
+uint16_t gLedSize = getRGBWsize(NUM_LEDS);
+#else
+CRGB leds[NUM_LEDS];
+uint16_t gLedSize = NUM_LEDS;
+#endif
 
 // Http Server
 AsyncWebServer server(80);
@@ -62,7 +75,7 @@ void setup()
 	}
 
 	delay(2000); // sanity delay
-	FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>((CRGB *)&leds[0], getRGBWsize(NUM_LEDS));
+	FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>((CRGB *)&leds[0], gLedSize);
 
 	FastLED.setBrightness(BRIGHTNESS);
 
@@ -119,7 +132,10 @@ void setup()
 
 			auto toUpdate = gNodes.find(nodeId);
 			if (toUpdate != gNodes.end())
+			{
+				debugOutln("Node update");
 				toUpdate->second->updateValue(jsonValue);
+			}
 			xSemaphoreGive(gNetworkSemaphore);
 
 			debugOutln("Done with update");
@@ -151,88 +167,43 @@ void setup()
 	gContext.startTime = millis();
 	gContext.lastUpdate = gContext.startTime;
 	gContext.numLeds = NUM_LEDS;
-}
 
-void prideMode()
-{
-	static uint16_t sPseudotime = 0;
-	static uint16_t sLastMillis = 0;
-	static uint16_t sHue16 = 0;
+	// RTP Midi
+	MIDI.begin();
 
-	uint8_t sat8 = beatsin88(87, 220, 250);
-	uint8_t brightdepth = beatsin88(341, 96, 224);
-	uint16_t brightnessthetainc16 = beatsin88(203, (25 * 256), (40 * 256));
-	uint8_t msmultiplier = beatsin88(147, 23, 60);
+	AppleMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t &ssrc, const char *name) {
+		debugOutln("Connected to session");
+		debugOutln(name);
+	});
+	AppleMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t &ssrc) {
+		debugOutln("Disconnected session");
+	});
 
-	uint16_t hue16 = sHue16; //gHue * 256;
-	uint16_t hueinc16 = beatsin88(113, 1, 3000);
+	MIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
+		debugOut("Midi note - ch");
+		debugOut(channel);
+		debugOut(" - note ");
+		debugOut(note);
+		debugOut(" - velo ");
+		debugOutln(velocity);
+		gContext.midiByNote[note] = true;
+	});
+	MIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
+		debugOutln("Midi note off");
+		gContext.midiByNote[note] = false;
+	});
 
-	uint16_t ms = millis();
-	uint16_t deltams = ms - sLastMillis;
-	sLastMillis = ms;
-	sPseudotime += deltams * msmultiplier;
-	sHue16 += deltams * beatsin88(400, 5, 9);
-	uint16_t brightnesstheta16 = sPseudotime;
-
-	for (uint16_t i = 0; i < NUM_LEDS; i++)
-	{
-		hue16 += hueinc16;
-		uint8_t hue8 = hue16 / 256;
-
-		brightnesstheta16 += brightnessthetainc16;
-		uint16_t b16 = sin16(brightnesstheta16) + 32768;
-
-		uint16_t bri16 = (uint32_t)((uint32_t)b16 * (uint32_t)b16) / 65536;
-		uint8_t bri8 = (uint32_t)(((uint32_t)bri16) * brightdepth) / 65536;
-		bri8 += (255 - brightdepth);
-
-		CRGB newcolor = CHSV(hue8, sat8, bri8);
-
-		uint16_t pixelnumber = i;
-		pixelnumber = (NUM_LEDS - 1) - pixelnumber;
-
-		CRGB oldcolor = leds[pixelnumber].toCRGB();
-		nblend(oldcolor, newcolor, 64);
-	}
-}
-
-void singleMode()
-{
-	// Move a single white led
-	for (int whiteLed = 0; whiteLed < NUM_LEDS; whiteLed = whiteLed + 1)
-	{
-		// Turn our current led on to white, then show the leds
-		leds[whiteLed] = gColors[whiteLed];
-
-		// Show the leds (only one of which is set to white, from above)
-		FastLED.show();
-
-		// Wait a little bit
-		delay(gDelay);
-
-		// Turn our current led back to black for the next loop around
-		leds[whiteLed] = CRGB::Black;
-	}
-}
-
-void allMode()
-{
-	for (int i = 0; i < NUM_LEDS; i++)
-	{
-		// Turn our current led on to white, then show the leds
-		leds[i] = gColors[i];
-	}
-	// Show the leds (only one of which is set to white, from above)
-	FastLED.show();
-	// Wait a little bit
-	delay(gDelay);
+	gContext.lastUpdate = millis();
 }
 
 void loop()
 {
+	// Listen to incoming notes
+	MIDI.read();
+
 	unsigned long currentTime = millis();
-	unsigned long delta = gContext.lastUpdate - currentTime;
-	gContext.elapsed += (currentTime - gContext.startTime) / 1000.f;
+	unsigned long delta = (gContext.lastUpdate - currentTime) / 1000000L;
+	gContext.elapsed += (currentTime - gContext.startTime) / 1000000L;
 
 	if (gRootNode != nullptr && (gNeedUpate || (delta > 0)))
 	{
@@ -243,33 +214,30 @@ void loop()
 
 		LedContext ledCtx;
 		ledCtx.id = -1;
-		for(auto& node : gNodes)
-			node.second->update(delta, gContext, ledCtx);
+		for (auto &node : gNodes)
+			node.second->preEval(delta, gContext, ledCtx);
 
 		for (int i = 0; i < NUM_LEDS; i++)
 		{
 			ledCtx.id = i;
-
 			gColors[i] = gRootNode->eval(gContext, ledCtx);
 		}
-		debugOut("Eval End");
+
+		for (auto &node : gNodes)
+			node.second->postEval(delta, gContext, ledCtx);
+
+		// debugOut("Eval End");
 
 		xSemaphoreGive(gNetworkSemaphore);
-	}
 
-	switch (gMode)
-	{
-	case LedMode::all:
-		allMode();
-		break;
-	case LedMode::single:
-		singleMode();
-		break;
-	case LedMode::pride:
-		prideMode();
-		break;
-	default:
-		break;
+		for (int i = 0; i < NUM_LEDS; i++)
+		{
+#ifdef LED_USE_WHITE
+			leds[i] = gColors[i];
+#else
+			leds[i] = gColors[i].toCRGB();
+#endif
+		}
 	}
 	FastLED.show();
 }

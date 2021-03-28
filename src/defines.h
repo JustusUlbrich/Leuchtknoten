@@ -11,8 +11,10 @@
 #endif
 
 // LED Setup
+// #define LED_USE_WHITE
 #define LED_PIN 25
-#define COLOR_ORDER RGB
-#define NUM_LEDS 50
+#define COLOR_ORDER GRB
+// #define COLOR_ORDER RGB
+#define NUM_LEDS 10
 
-#define BRIGHTNESS 16
+#define BRIGHTNESS 255

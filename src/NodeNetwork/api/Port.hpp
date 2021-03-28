@@ -39,7 +39,7 @@ namespace Node
 		INode *node = nullptr;
 		std::vector<Connection<T>> connections;
 
-		typedef std::function<T(const Context&, const LedContext &ledContext)> EvalFunc;
+		typedef std::function<T(const Context &, const LedContext &ledContext)> EvalFunc;
 		const EvalFunc evalNodeFunc;
 
 		OutputPort() = delete;
@@ -55,8 +55,8 @@ namespace Node
 
 		inline T eval(const Context &context, const LedContext &ledContext)
 		{
-			debugOut("\t\t\t Eval Port: ");
-			debugOutln(identifier.c_str());
+			//debugOut("\t\t\t Eval Port: ");
+			//debugOutln(identifier.c_str());
 
 			// debugOutln("\t\t\t at Node: ");
 			// debugOutln(node->id);
@@ -64,8 +64,8 @@ namespace Node
 			T out = T();
 			if (node != nullptr && evalNodeFunc != nullptr)
 				out = evalNodeFunc(context, ledContext);
-			else
-				debugOutln("\t\t\t Port node empty :(");
+			// else
+			// 	debugOutln("\t\t\t Port node empty :(");
 			return out;
 		}
 	};
