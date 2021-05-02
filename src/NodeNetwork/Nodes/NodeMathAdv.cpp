@@ -20,6 +20,16 @@ namespace Node
 			this,
 			[this](const Context &c, const LedContext &lc) { return evalMod(c, lc); });
 
+		powOut = std::make_shared<OutputPort<float>>(
+			"pow",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalPow(c, lc); });
+
+		absOut = std::make_shared<OutputPort<float>>(
+			"abs",
+			this,
+			[this](const Context &c, const LedContext &lc) { return evalAbs(c, lc); });
+
 		connectInport(nodeJson, nodeFactory, in1, "in1");
 		connectInport(nodeJson, nodeFactory, in2, "in2");
 	}
@@ -62,11 +72,25 @@ namespace Node
 		return fmod(getIn1(context, ledContext), getIn2(context, ledContext));
 	}
 
+	float NodeMathAdv::evalPow(const Context &context, const LedContext &ledContext)
+	{
+		return powf(getIn1(context, ledContext), getIn2(context, ledContext));
+	}
+
+	float NodeMathAdv::evalAbs(const Context &context, const LedContext &ledContext)
+	{
+		return fabs(getIn1(context, ledContext));
+	}
+
 	void NodeMathAdv::connectOutport(const std::string &portID, Connection<float> &connection)
 	{
 		if (portID == "step")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(stepOut);
 		else if (portID == "mod")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(modOut);
+		else if (portID == "pow")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(powOut);
+		else if (portID == "abs")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(absOut);
 	}
 } // namespace Node

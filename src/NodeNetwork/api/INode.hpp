@@ -57,8 +57,8 @@ namespace Node
 			}
 		}
 
-		virtual void preEval(const float delta, const Context &context, const LedContext &ledContext){};
-		virtual void postEval(const float delta, const Context &context, const LedContext &ledContext){};
+		virtual void preEval(const Context &context, const LedContext &ledContext){};
+		virtual void postEval(const Context &context, const LedContext &ledContext){};
 
 		virtual void updateValue(const ArduinoJson::JsonObject &nodeData){};
 

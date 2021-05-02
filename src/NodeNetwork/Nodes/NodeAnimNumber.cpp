@@ -15,18 +15,21 @@ namespace Node
 
 		connectInport(nodeJson, nodeFactory, reset, "reset");
 		connectInport(nodeJson, nodeFactory, delay, "delay");
+
+		for (int i = 0; i < NUM_LEDS; i++)
+			t[i] = 0.f;
 	}
 
 	NodeAnimNumber::~NodeAnimNumber()
 	{
 	}
 
-	void NodeAnimNumber::preEval(const float delta, const Context &context, const LedContext &ledContext)
+	void NodeAnimNumber::preEval(const Context &context, const LedContext &ledContext)
 	{
-		if (getReset(context, ledContext))
-			t = 0.f;
-		else
-			t += delta;
+		// if (getReset(context, ledContext))
+		// 	t = 0.f;
+		// else
+		// t += delta;
 	}
 
 	float NodeAnimNumber::getDelay(const Context &context, const LedContext &ledContext)
@@ -57,7 +60,14 @@ namespace Node
 
 	float NodeAnimNumber::eval(const Context &context, const LedContext &ledContext)
 	{
-		return min(t / getDelay(context, ledContext), 1.0f);
+		if (getReset(context, ledContext))
+		{
+			t[ledContext.id] = 0.f;
+			return 0.f;
+		}
+
+		t[ledContext.id] += context.delta;
+		return min(t[ledContext.id] / getDelay(context, ledContext), 1.0f);
 	}
 
 	void NodeAnimNumber::connectOutport(const std::string &portID, Connection<float> &connection)

@@ -22,10 +22,14 @@ namespace Node
 
 		float evalStep(const Context &context, const LedContext &ledContext);
 		float evalMod(const Context &context, const LedContext &ledContext);
+		float evalPow(const Context &context, const LedContext &ledContext);
+		float evalAbs(const Context &context, const LedContext &ledContext);
 
 		std::shared_ptr<InputPort<float>> in1;
 		std::shared_ptr<InputPort<float>> in2;
 		std::shared_ptr<OutputPort<float>> stepOut;
 		std::shared_ptr<OutputPort<float>> modOut;
+		std::shared_ptr<OutputPort<float>> powOut;
+		std::shared_ptr<OutputPort<float>> absOut;
 	};
 } // namespace Node

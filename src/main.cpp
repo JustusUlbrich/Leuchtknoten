@@ -147,6 +147,64 @@ void setup()
 		1024U);
 	server.addHandler(updateHandler);
 
+	AsyncCallbackJsonWebHandler *storeHandler = new AsyncCallbackJsonWebHandler(
+		"/api/nodestore", [](AsyncWebServerRequest *request, JsonVariant &json) {
+			JsonObject jsonObj = json.as<JsonObject>();
+			auto networkPath = "/net/" + jsonObj["name"].as<std::string>();
+			auto network = jsonObj["network"].as<std::string>();
+
+			debugOut("Storing network: ");
+			debugOutln(networkPath.c_str());
+
+			auto file = SPIFFS.open(networkPath.c_str(), "w");
+			file.write((uint8_t *)(network.c_str()), network.size());
+			file.close();
+
+			request->send(200, "text/plain", "Success!");
+		},
+		16384U);
+	server.addHandler(storeHandler);
+
+	server.on("/api/nodeload", HTTP_GET, [](AsyncWebServerRequest *request) {
+		AsyncWebParameter *p = request->getParam(0);
+		if (p != nullptr && p->name() == "name")
+		{
+			auto networkPath = "/net/" + p->value();
+			if (SPIFFS.exists(networkPath))
+			{
+				auto file = SPIFFS.open(networkPath.c_str(), "r");
+				auto fileContent = file.readString();
+				file.close();
+
+				request->send(200, "text/json", fileContent);
+				return;
+			}
+		}
+
+		request->send(404, "text/plain", "Network not found :(");
+	});
+
+	server.on("/api/nodelist", HTTP_GET, [](AsyncWebServerRequest *request) {
+		File dir = SPIFFS.open("/net");
+		if (!dir || !dir.isDirectory())
+			request->send(404, "text/plain", "Network directory not found :(");
+
+		// filename is <32 char. So this is >10 files
+		char result[400] = "{\"nodes\":[";
+		File file = dir.openNextFile();
+		while (file)
+		{
+			strcat(result, "\"");
+			strcat(result, &file.name()[5]);
+			strcat(result, "\"");
+			file = dir.openNextFile();
+			if (file)
+				strcat(result, ",");
+		};
+		strcat(result, "]}");
+		request->send(200, "text/json", result);
+	});
+
 	// Web
 	SPIFFS.begin();
 	server.serveStatic("/", SPIFFS, "/");
@@ -164,8 +222,8 @@ void setup()
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "content-type");
 	server.begin();
 
-	gContext.startTime = millis();
-	gContext.lastUpdate = gContext.startTime;
+	gContext.elapsed = 0.f;
+	gContext.lastUpdate = millis();
 	gContext.numLeds = NUM_LEDS;
 
 	// RTP Midi
@@ -186,14 +244,13 @@ void setup()
 		debugOut(note);
 		debugOut(" - velo ");
 		debugOutln(velocity);
-		gContext.midiByNote[note] = true;
+		gContext.activeNotes.push_back(MidiNote{channel, note, velocity});
+		// gContext.midiByNote[note] = true;
 	});
 	MIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
 		debugOutln("Midi note off");
-		gContext.midiByNote[note] = false;
+		// gContext.midiByNote[note] = false;
 	});
-
-	gContext.lastUpdate = millis();
 }
 
 void loop()
@@ -202,10 +259,10 @@ void loop()
 	MIDI.read();
 
 	unsigned long currentTime = millis();
-	unsigned long delta = (gContext.lastUpdate - currentTime) / 1000000L;
-	gContext.elapsed += (currentTime - gContext.startTime) / 1000000L;
+	gContext.elapsed = currentTime;
+	gContext.delta = (currentTime - gContext.lastUpdate);
 
-	if (gRootNode != nullptr && (gNeedUpate || (delta > 0)))
+	if (gRootNode != nullptr && (gNeedUpate || (gContext.delta > 0)))
 	{
 		xSemaphoreTake(gNetworkSemaphore, 10 * portTICK_PERIOD_MS);
 
@@ -215,7 +272,7 @@ void loop()
 		LedContext ledCtx;
 		ledCtx.id = -1;
 		for (auto &node : gNodes)
-			node.second->preEval(delta, gContext, ledCtx);
+			node.second->preEval(gContext, ledCtx);
 
 		for (int i = 0; i < NUM_LEDS; i++)
 		{
@@ -224,8 +281,9 @@ void loop()
 		}
 
 		for (auto &node : gNodes)
-			node.second->postEval(delta, gContext, ledCtx);
+			node.second->postEval(gContext, ledCtx);
 
+		gContext.activeNotes.clear();
 		// debugOut("Eval End");
 
 		xSemaphoreGive(gNetworkSemaphore);

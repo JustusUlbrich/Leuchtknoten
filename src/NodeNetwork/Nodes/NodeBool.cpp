@@ -20,11 +20,6 @@ namespace Node
 	void NodeBool::updateValue(const ArduinoJson::JsonObject &nodeData)
 	{
 		value = nodeData["value"] | false;
-
-		if (value)
-			debugOutln('Value updated to true');
-		else
-			debugOutln('Value updated to false');
 	}
 
 	void NodeBool::connectOutport(const std::string &portID, Connection<bool> &connection)

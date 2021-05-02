@@ -22,6 +22,7 @@
 #include "nodes/NodeMath.hpp"
 #include "nodes/NodeMathAdv.hpp"
 #include "nodes/NodeAnimNumber.hpp"
+#include "nodes/NodeMidi.hpp"
 #include "nodes/NodeBool.hpp"
 
 #include "NodeFactory.hpp"
@@ -99,6 +100,10 @@ namespace Node
 		else if (nodeJson["name"] == "AnimNumber")
 		{
 			newNode = std::make_shared<NodeAnimNumber>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Midi")
+		{
+			newNode = std::make_shared<NodeMidi>(nodeJson, nodeFactory);
 		}
 		else
 		{
