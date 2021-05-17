@@ -230,6 +230,7 @@ void setup()
 	// CORS
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "content-type");
+	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "*");
 	server.begin();
 
 	gContext.elapsed = 0.f;
