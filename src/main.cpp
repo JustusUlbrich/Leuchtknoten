@@ -28,21 +28,10 @@ APPLEMIDI_CREATE_DEFAULTSESSION_INSTANCE();
 #include "NodeNetwork/Generators.hpp"
 
 // Wifi
-const char *ssid = "PrettyFlyForAWifi";
-const char *password = "***REMOVED***";
-
-enum LedMode
-{
-	all,
-	single,
-	pride,
-	off
-};
+const char* ssid = "PrettyFlyForAWifi";
+const char* password = "***REMOVED***";
 
 SemaphoreHandle_t gNetworkSemaphore;
-
-uint16_t gDelay = 100;
-LedMode gMode = LedMode::all;
 
 std::string gRootId = "";
 std::shared_ptr<Node::NodeOutput> gRootNode = nullptr;
@@ -74,8 +63,8 @@ void setup()
 		gColors[i].w = 0;
 	}
 
-	delay(2000); // sanity delay
-	FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>((CRGB *)&leds[0], gLedSize);
+	delay(500); // sanity delay
+	FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>((CRGB*)&leds[0], gLedSize);
 
 	FastLED.setBrightness(BRIGHTNESS);
 
@@ -89,23 +78,17 @@ void setup()
 	}
 	debugOutln("Connected to the WiFi network: " + WiFi.localIP().toString());
 
+	// -------
 	// API
-	server.on("/api/mode", HTTP_GET, [](AsyncWebServerRequest *request) {
-		gMode = (gMode != LedMode::single) ? LedMode::single : LedMode::pride;
-		request->send(200, "text/plain", "Success!");
-	});
+	// TODO: Cleanup and move to new file
+	// TODO: Cleanup endpoints naming :(
 
-	server.on("/api/delay", HTTP_GET, [](AsyncWebServerRequest *request) {
-		gDelay = (gDelay == 100) ? 10 : 100;
-		request->send(200, "text/plain", "Success!");
-	});
-
-	server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
 		request->send(SPIFFS, "/index.html", String());
-	});
+		});
 
-	AsyncCallbackJsonWebHandler *nodeHandler = new AsyncCallbackJsonWebHandler(
-		"/api/node", [](AsyncWebServerRequest *request, JsonVariant &json) {
+	AsyncCallbackJsonWebHandler* nodeHandler = new AsyncCallbackJsonWebHandler(
+		"/api/node", [](AsyncWebServerRequest* request, JsonVariant& json) {
 			JsonObject jsonObj = json.as<JsonObject>();
 
 			xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
@@ -122,8 +105,8 @@ void setup()
 		16384U);
 	server.addHandler(nodeHandler);
 
-	AsyncCallbackJsonWebHandler *updateHandler = new AsyncCallbackJsonWebHandler(
-		"/api/nodeupdate", [](AsyncWebServerRequest *request, JsonVariant &json) {
+	AsyncCallbackJsonWebHandler* updateHandler = new AsyncCallbackJsonWebHandler(
+		"/api/nodeupdate", [](AsyncWebServerRequest* request, JsonVariant& json) {
 			JsonObject jsonObj = json.as<JsonObject>();
 			auto nodeId = jsonObj["NodeId"].as<std::string>();
 			auto jsonValue = jsonObj["Data"].as<JsonObject>();
@@ -147,8 +130,10 @@ void setup()
 		1024U);
 	server.addHandler(updateHandler);
 
-	AsyncCallbackJsonWebHandler *storeHandler = new AsyncCallbackJsonWebHandler(
-		"/api/nodestore", [](AsyncWebServerRequest *request, JsonVariant &json) {
+	// --------
+	// SAVE
+	AsyncCallbackJsonWebHandler* storeHandler = new AsyncCallbackJsonWebHandler(
+		"/api/nodestore", [](AsyncWebServerRequest* request, JsonVariant& json) {
 			JsonObject jsonObj = json.as<JsonObject>();
 			auto networkPath = "/net/" + jsonObj["name"].as<std::string>();
 			auto network = jsonObj["network"].as<std::string>();
@@ -157,7 +142,7 @@ void setup()
 			debugOutln(networkPath.c_str());
 
 			auto file = SPIFFS.open(networkPath.c_str(), "w");
-			file.write((uint8_t *)(network.c_str()), network.size());
+			file.write((uint8_t*)(network.c_str()), network.size());
 			file.close();
 
 			request->send(200, "text/plain", "Success!");
@@ -165,8 +150,32 @@ void setup()
 		16384U);
 	server.addHandler(storeHandler);
 
-	server.on("/api/nodeload", HTTP_GET, [](AsyncWebServerRequest *request) {
-		AsyncWebParameter *p = request->getParam(0);
+	// --------
+	// DELETE
+	server.on("/api/nodedelete", HTTP_DELETE, [](AsyncWebServerRequest* request) {
+		AsyncWebParameter* p = request->getParam(0);
+		if (p != nullptr && p->name() == "name")
+		{
+			auto networkPath = "/net/" + p->value();
+			if (SPIFFS.exists(networkPath))
+			{
+				auto removed = SPIFFS.remove(networkPath.c_str());
+
+				if (removed)
+					request->send(200, "text/plain", "Removed");
+				else
+					request->send(404, "text/plain", "Could not delete Network :(");
+				return;
+			}
+		}
+
+		request->send(404, "text/plain", "Network not found :(");
+		});
+
+	// --------
+	// LOAD
+	server.on("/api/nodeload", HTTP_GET, [](AsyncWebServerRequest* request) {
+		AsyncWebParameter* p = request->getParam(0);
 		if (p != nullptr && p->name() == "name")
 		{
 			auto networkPath = "/net/" + p->value();
@@ -182,9 +191,9 @@ void setup()
 		}
 
 		request->send(404, "text/plain", "Network not found :(");
-	});
+		});
 
-	server.on("/api/nodelist", HTTP_GET, [](AsyncWebServerRequest *request) {
+	server.on("/api/nodelist", HTTP_GET, [](AsyncWebServerRequest* request) {
 		File dir = SPIFFS.open("/net");
 		if (!dir || !dir.isDirectory())
 			request->send(404, "text/plain", "Network directory not found :(");
@@ -203,19 +212,20 @@ void setup()
 		};
 		strcat(result, "]}");
 		request->send(200, "text/json", result);
-	});
+		});
 
 	// Web
 	SPIFFS.begin();
-	server.serveStatic("/", SPIFFS, "/");
+	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html.gz");
 
 	// Options default handler
-	server.onNotFound([](AsyncWebServerRequest *request) {
-	if (request->method() == HTTP_OPTIONS) {
-		request->send(200);
-	} else {
-		request->send(404);
-	} });
+	server.onNotFound([](AsyncWebServerRequest* request) {
+		if (request->method() == HTTP_OPTIONS) {
+			request->send(200);
+		}
+		else {
+			request->send(404);
+		} });
 
 	// CORS
 	DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
@@ -229,13 +239,13 @@ void setup()
 	// RTP Midi
 	MIDI.begin();
 
-	AppleMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t &ssrc, const char *name) {
+	AppleMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t& ssrc, const char* name) {
 		debugOutln("Connected to session");
 		debugOutln(name);
-	});
-	AppleMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t &ssrc) {
+		});
+	AppleMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t& ssrc) {
 		debugOutln("Disconnected session");
-	});
+		});
 
 	MIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
 		debugOut("Midi note - ch");
@@ -244,13 +254,13 @@ void setup()
 		debugOut(note);
 		debugOut(" - velo ");
 		debugOutln(velocity);
-		gContext.activeNotes.push_back(MidiNote{channel, note, velocity});
+		gContext.activeNotes.push_back(MidiNote{ channel, note, velocity });
 		// gContext.midiByNote[note] = true;
-	});
+		});
 	MIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
 		debugOutln("Midi note off");
 		// gContext.midiByNote[note] = false;
-	});
+		});
 }
 
 void loop()
@@ -271,7 +281,7 @@ void loop()
 
 		LedContext ledCtx;
 		ledCtx.id = -1;
-		for (auto &node : gNodes)
+		for (auto& node : gNodes)
 			node.second->preEval(gContext, ledCtx);
 
 		for (int i = 0; i < NUM_LEDS; i++)
@@ -280,7 +290,7 @@ void loop()
 			gColors[i] = gRootNode->eval(gContext, ledCtx);
 		}
 
-		for (auto &node : gNodes)
+		for (auto& node : gNodes)
 			node.second->postEval(gContext, ledCtx);
 
 		gContext.activeNotes.clear();

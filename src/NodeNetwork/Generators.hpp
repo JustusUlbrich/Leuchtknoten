@@ -95,7 +95,6 @@ namespace Node
 		else if (nodeJson["name"] == "Bool")
 		{
 			newNode = std::make_shared<NodeBool>(nodeJson, nodeFactory);
-			debugOut("\t Bool Node");
 		}
 		else if (nodeJson["name"] == "AnimNumber")
 		{
