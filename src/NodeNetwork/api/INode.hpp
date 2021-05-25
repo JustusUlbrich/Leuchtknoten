@@ -25,14 +25,14 @@ namespace Node
 		std::vector<int> position;
 		std::string name = "";
 
-		explicit INode(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory){};
+		explicit INode(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory) {};
 
 		template <typename T>
 		void connectInport(
-			const ArduinoJson::JsonObject &nodeJson,
-			NodeFactory *nodeFactory,
+			const ArduinoJson::JsonObject& nodeJson,
+			NodeFactory* nodeFactory,
 			std::shared_ptr<InputPort<T>> inPort,
-			const std::string &inportID)
+			const std::string& inportID)
 		{
 			// Check for connections and handle
 			auto connections = nodeJson["inputs"][inportID]["connections"].as<JsonArray>();
@@ -57,15 +57,15 @@ namespace Node
 			}
 		}
 
-		virtual void preEval(const Context &context, const LedContext &ledContext){};
-		virtual void postEval(const Context &context, const LedContext &ledContext){};
+		virtual void preEval(const Context& context, const LedContext& ledContext) {};
+		virtual void postEval(const Context& context, const LedContext& ledContext) {};
 
-		virtual void updateValue(const ArduinoJson::JsonObject &nodeData){};
+		virtual void updateValue(const ArduinoJson::JsonObject& nodeData) {};
 
 		// TODO: Think about refactoring this
-		virtual void connectOutport(const std::string &portID, Connection<CRGB> &connection){};
-		virtual void connectOutport(const std::string &portID, Connection<float> &connection){};
-		virtual void connectOutport(const std::string &portID, Connection<bool> &connection){};
+		virtual void connectOutport(const std::string& portID, Connection<CRGB>& connection) {};
+		virtual void connectOutport(const std::string& portID, Connection<float>& connection) {};
+		virtual void connectOutport(const std::string& portID, Connection<bool>& connection) {};
 	};
 
 } // namespace Node

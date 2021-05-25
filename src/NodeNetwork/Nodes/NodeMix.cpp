@@ -3,7 +3,7 @@
 
 namespace Node
 {
-	NodeMix::NodeMix(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
+	NodeMix::NodeMix(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
 		c1In = std::make_shared<InputPort<CRGB>>("c1", this);
@@ -13,7 +13,7 @@ namespace Node
 		mixOut = std::make_shared<OutputPort<CRGB>>(
 			"mix",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalRgb(c, lc); });
+			[this](const Context& c, const LedContext& lc) { return evalRgb(c, lc); });
 
 		connectInport(nodeJson, nodeFactory, c1In, "c1");
 		connectInport(nodeJson, nodeFactory, c2In, "c2");
@@ -24,9 +24,9 @@ namespace Node
 	{
 	}
 
-	CRGB NodeMix::evalRgb(const Context &context, const LedContext &ledContext)
+	CRGB NodeMix::evalRgb(const Context& context, const LedContext& ledContext)
 	{
-		float scale = ledContext.id / (float)context.numLeds;
+		float scale = ledContext.id / (float)context.config.leds.count;
 		CRGB c1{}, c2{};
 
 		if (scaleIn->connection.has_value())
@@ -58,7 +58,7 @@ namespace Node
 		return c1;
 	}
 
-	void NodeMix::connectOutport(const std::string &portID, Connection<CRGB> &connection)
+	void NodeMix::connectOutport(const std::string& portID, Connection<CRGB>& connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<CRGB>>(mixOut);
 	}

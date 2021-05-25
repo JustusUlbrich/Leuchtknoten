@@ -1,0 +1,21 @@
+{
+	"leds": {
+		"count": 16,
+		"brightness": 255
+	},
+	"wifi": {
+		"ssid": "",
+		"key": ""
+	},
+	"spotify": {
+		"enabled": false,
+		"update_rate_ms": 10000,
+		"market": "DE",
+		"client_id": "",
+		"client_secret": "",
+		"refresh_token": ""
+	},
+	"midi": {
+		"enabled": true
+	}
+}

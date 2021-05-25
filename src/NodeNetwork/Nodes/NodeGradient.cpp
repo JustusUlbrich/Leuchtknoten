@@ -3,14 +3,14 @@
 
 namespace Node
 {
-	NodeGradient::NodeGradient(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
+	NodeGradient::NodeGradient(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
 		scaleIn = std::make_shared<InputPort<float>>("scale", this);
 		out = std::make_shared<OutputPort<CRGB>>(
 			"num",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalRgb(c, lc); });
+			[this](const Context& c, const LedContext& lc) { return evalRgb(c, lc); });
 
 		auto jsonGradients = nodeJson["data"]["gradient"].as<JsonArray>();
 		for (JsonVariant v : jsonGradients)
@@ -20,7 +20,7 @@ namespace Node
 
 			uint32_t data = (uint32_t)strtol(v["color"].as<std::string>().substr(1).c_str(), NULL, 16);
 
-			e.color = CRGB{data};
+			e.color = CRGB{ data };
 
 			gradient.entries.push_back(e);
 		}
@@ -32,11 +32,11 @@ namespace Node
 	{
 	}
 
-	CRGB NodeGradient::evalRgb(const Context &context, const LedContext &ledContext)
+	CRGB NodeGradient::evalRgb(const Context& context, const LedContext& ledContext)
 	{
 		// float scale = 0.5;
 		// DEBUG
-		float scale = ledContext.id / (float)context.numLeds;
+		float scale = ledContext.id / (float)context.config.leds.count;
 		// END DEBUG
 
 		if (scaleIn->connection.has_value())
@@ -76,7 +76,7 @@ namespace Node
 		return gradient.entries[gradient.entries.size() - 1].color;
 	}
 
-	void NodeGradient::updateValue(const ArduinoJson::JsonObject &nodeData)
+	void NodeGradient::updateValue(const ArduinoJson::JsonObject& nodeData)
 	{
 		gradient.entries.clear();
 
@@ -88,13 +88,13 @@ namespace Node
 
 			uint32_t data = (uint32_t)strtol(v["color"].as<std::string>().substr(1).c_str(), NULL, 16);
 
-			e.color = CRGB{data};
+			e.color = CRGB{ data };
 
 			gradient.entries.push_back(e);
 		}
 	}
 
-	void NodeGradient::connectOutport(const std::string &portID, Connection<CRGB> &connection)
+	void NodeGradient::connectOutport(const std::string& portID, Connection<CRGB>& connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<CRGB>>(out);
 	}

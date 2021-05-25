@@ -1,6 +1,10 @@
 #pragma once
 
+#include "defines.h"
 #include <map>
+#include "config.hpp"
+
+struct CRGBW;
 
 struct MidiNote
 {
@@ -16,8 +20,6 @@ struct MidiNote
 
 struct Context
 {
-	int numLeds;
-
 	unsigned long lastUpdate = 0;
 	unsigned long delta = 0.f;
 	float elapsed = 0.f;
@@ -27,6 +29,21 @@ struct Context
 
 	// TODO: add more maps for additional channels. Add data for velocity?!
 	// TODO: add led positrion mapping
+
+	unsigned long lastSpotifyUpdate = 0;
+	long spotifyDuration = 0;
+	long spotifyProgress = 0;
+
+	// TODO: Think about moving this out of "context"?
+	Config config;
+
+	// Internal
+	std::vector<CRGBW> colorBuffer;
+#if LED_USE_RGBW
+	std::vector<CRGBW> ledBuffer;
+#else
+	std::vector<CRGB> ledBuffer;
+#endif
 };
 
 struct LedContext

@@ -5,7 +5,7 @@
 
 namespace Node
 {
-	NodeMidi::NodeMidi(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
+	NodeMidi::NodeMidi(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
 
@@ -15,7 +15,7 @@ namespace Node
 		outNoteOn = std::make_shared<OutputPort<bool>>(
 			"noteOn",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalNoteOn(c, lc); });
+			[this](const Context& c, const LedContext& lc) { return evalNoteOn(c, lc); });
 
 		// outNoteOff = std::make_shared<OutputPort<bool>>(
 		// 	"noteOff",
@@ -25,17 +25,21 @@ namespace Node
 		outPitch = std::make_shared<OutputPort<float>>(
 			"pitch",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalPitch(c, lc); });
+			[this](const Context& c, const LedContext& lc) { return evalPitch(c, lc); });
 
 		outVelocity = std::make_shared<OutputPort<float>>(
 			"velo",
 			this,
-			[this](const Context &c, const LedContext &lc) { return evalVelocity(c, lc); });
+			[this](const Context& c, const LedContext& lc) { return evalVelocity(c, lc); });
 
 		connectInport(nodeJson, nodeFactory, inNoteMin, "noteMin");
 		connectInport(nodeJson, nodeFactory, inNoteMax, "noteMax");
 
-		for (int i = 0; i < NUM_LEDS; i++)
+		auto ledCount = nodeFactory->getConfig().leds.count;
+		lastPitch.resize(ledCount);
+		lastVelocity.resize(ledCount);
+
+		for (int i = 0; i < ledCount; i++)
 		{
 			lastPitch[i] = 0.f;
 			lastVelocity[i] = 0.f;
@@ -46,11 +50,11 @@ namespace Node
 	{
 	}
 
-	void NodeMidi::postEval(const float delta, const Context &context, const LedContext &ledContext)
+	void NodeMidi::postEval(const float delta, const Context& context, const LedContext& ledContext)
 	{
 	}
 
-	uint8_t NodeMidi::getNoteMin(const Context &context, const LedContext &ledContext)
+	uint8_t NodeMidi::getNoteMin(const Context& context, const LedContext& ledContext)
 	{
 		uint8_t value = 0;
 
@@ -63,7 +67,7 @@ namespace Node
 		return value;
 	}
 
-	uint8_t NodeMidi::getNoteMax(const Context &context, const LedContext &ledContext)
+	uint8_t NodeMidi::getNoteMax(const Context& context, const LedContext& ledContext)
 	{
 		uint8_t value = 0;
 
@@ -76,7 +80,7 @@ namespace Node
 		return value;
 	}
 
-	bool NodeMidi::evalNoteOn(const Context &context, const LedContext &ledContext)
+	bool NodeMidi::evalNoteOn(const Context& context, const LedContext& ledContext)
 	{
 		// TODO: cache results by copying all results and reuse them. use flag to mark as computed
 		const uint8_t min = getNoteMin(context, ledContext);
@@ -96,19 +100,19 @@ namespace Node
 		return true;
 	}
 
-	float NodeMidi::evalPitch(const Context &context, const LedContext &ledContext)
+	float NodeMidi::evalPitch(const Context& context, const LedContext& ledContext)
 	{
 		// TODO overthink this
 		return lastPitch[ledContext.id];
 	}
 
-	float NodeMidi::evalVelocity(const Context &context, const LedContext &ledContext)
+	float NodeMidi::evalVelocity(const Context& context, const LedContext& ledContext)
 	{
 		// TODO overthink this
 		return lastVelocity[ledContext.id];
 	}
 
-	void NodeMidi::connectOutport(const std::string &portID, Connection<float> &connection)
+	void NodeMidi::connectOutport(const std::string& portID, Connection<float>& connection)
 	{
 		if (portID == "pitch")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(outPitch);
@@ -116,7 +120,7 @@ namespace Node
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(outVelocity);
 	}
 
-	void NodeMidi::connectOutport(const std::string &portID, Connection<bool> &connection)
+	void NodeMidi::connectOutport(const std::string& portID, Connection<bool>& connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<bool>>(outNoteOn);
 	}

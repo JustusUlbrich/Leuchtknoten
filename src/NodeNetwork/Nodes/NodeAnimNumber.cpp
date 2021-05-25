@@ -1,9 +1,10 @@
 #include "NodeAnimNumber.hpp"
 #include <math.h>
+#include "../../config.hpp"
 
 namespace Node
 {
-	NodeAnimNumber::NodeAnimNumber(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory)
+	NodeAnimNumber::NodeAnimNumber(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory)
 		: INode(nodeJson, nodeFactory)
 	{
 		reset = std::make_shared<InputPort<bool>>("reset", this);
@@ -11,12 +12,15 @@ namespace Node
 		out = std::make_shared<OutputPort<float>>(
 			"out",
 			this,
-			[this](const Context &c, const LedContext &lc) { return eval(c, lc); });
+			[this](const Context& c, const LedContext& lc) { return eval(c, lc); });
 
 		connectInport(nodeJson, nodeFactory, reset, "reset");
 		connectInport(nodeJson, nodeFactory, delay, "delay");
 
-		for (int i = 0; i < NUM_LEDS; i++)
+		auto ledCount = nodeFactory->getConfig().leds.count;
+		t.resize(ledCount);
+
+		for (int i = 0; i < ledCount; i++)
 			t[i] = 0.f;
 	}
 
@@ -24,7 +28,7 @@ namespace Node
 	{
 	}
 
-	void NodeAnimNumber::preEval(const Context &context, const LedContext &ledContext)
+	void NodeAnimNumber::preEval(const Context& context, const LedContext& ledContext)
 	{
 		// if (getReset(context, ledContext))
 		// 	t = 0.f;
@@ -32,7 +36,7 @@ namespace Node
 		// t += delta;
 	}
 
-	float NodeAnimNumber::getDelay(const Context &context, const LedContext &ledContext)
+	float NodeAnimNumber::getDelay(const Context& context, const LedContext& ledContext)
 	{
 		float value = 1.f;
 
@@ -45,7 +49,7 @@ namespace Node
 		return value;
 	}
 
-	boolean NodeAnimNumber::getReset(const Context &context, const LedContext &ledContext)
+	boolean NodeAnimNumber::getReset(const Context& context, const LedContext& ledContext)
 	{
 		bool value = false;
 
@@ -58,7 +62,7 @@ namespace Node
 		return value;
 	}
 
-	float NodeAnimNumber::eval(const Context &context, const LedContext &ledContext)
+	float NodeAnimNumber::eval(const Context& context, const LedContext& ledContext)
 	{
 		if (getReset(context, ledContext))
 		{
@@ -70,7 +74,7 @@ namespace Node
 		return min(t[ledContext.id] / getDelay(context, ledContext), 1.0f);
 	}
 
-	void NodeAnimNumber::connectOutport(const std::string &portID, Connection<float> &connection)
+	void NodeAnimNumber::connectOutport(const std::string& portID, Connection<float>& connection)
 	{
 		connection.fromPort = std::shared_ptr<OutputPort<float>>(out);
 	}

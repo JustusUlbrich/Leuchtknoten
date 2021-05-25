@@ -13,21 +13,22 @@ namespace Node
 	{
 
 	public:
-		explicit NodeAnimNumber(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
+		explicit NodeAnimNumber(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory);
 		~NodeAnimNumber();
 
-		void connectOutport(const std::string &portID, Connection<float> &connection) override;
+		void connectOutport(const std::string& portID, Connection<float>& connection) override;
 
 		std::shared_ptr<InputPort<bool>> reset;
 		std::shared_ptr<InputPort<float>> delay;
 		std::shared_ptr<OutputPort<float>> out;
 
-		float t[NUM_LEDS];
+		// TODO: name?
+		std::vector<float> t;
 
-		void preEval(const Context &context, const LedContext &ledContext) override;
+		void preEval(const Context& context, const LedContext& ledContext) override;
 
-		float getDelay(const Context &context, const LedContext &ledContext);
-		boolean getReset(const Context &context, const LedContext &ledContext);
-		float eval(const Context &context, const LedContext &ledContext);
+		float getDelay(const Context& context, const LedContext& ledContext);
+		boolean getReset(const Context& context, const LedContext& ledContext);
+		float eval(const Context& context, const LedContext& ledContext);
 	};
 } // namespace Node

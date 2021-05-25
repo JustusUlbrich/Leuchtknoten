@@ -29,7 +29,7 @@
 
 namespace Node
 {
-	static void fillNodeFromJson(JsonObject &j, std::shared_ptr<INode> node)
+	static void fillNodeFromJson(JsonObject& j, std::shared_ptr<INode> node)
 	{
 		node->id = j["id"].as<int>();
 		node->name = j["name"].as<std::string>();
@@ -38,7 +38,7 @@ namespace Node
 		// node->position.push_back(j["position"][1].as<int>());
 	}
 
-	static std::shared_ptr<INode> createNodeFromJson(const std::string &nodeID, JsonObject &jsonNodes, NodeFactory *nodeFactory)
+	static std::shared_ptr<INode> createNodeFromJson(const std::string& nodeID, JsonObject& jsonNodes, NodeFactory* nodeFactory)
 	{
 		debugOut("\t Start Node: ");
 		debugOutln(nodeID.c_str());
@@ -123,7 +123,7 @@ namespace Node
 		return newNode;
 	}
 
-	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(JsonObject &doc, std::string &rootId)
+	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(JsonObject& doc, Config& config, std::string& rootId)
 	{
 		JsonObject jsonNodes = doc["nodes"].as<JsonObject>();
 
@@ -145,7 +145,7 @@ namespace Node
 		if (rootObject.isNull())
 			return std::unordered_map<std::string, std::shared_ptr<INode>>();
 
-		NodeFactory factory{jsonNodes};
+		NodeFactory factory{ jsonNodes, config };
 		factory.createNodeById(rootId);
 
 		debugOut(rootId.c_str());
@@ -154,15 +154,15 @@ namespace Node
 		return factory.nodes;
 	}
 
-	static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char *json, std::string &rootId)
-	{
-		debugOutln("Start parse");
+	// static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char* json, std::string& rootId)
+	// {
+	// 	debugOutln("Start parse");
 
-		DynamicJsonDocument doc(8192);
-		deserializeJson(doc, json, DeserializationOption::NestingLimit(50));
+	// 	DynamicJsonDocument doc(8192);
+	// 	deserializeJson(doc, json, DeserializationOption::NestingLimit(50));
 
-		JsonObject jsonObj = doc.as<JsonObject>();
+	// 	JsonObject jsonObj = doc.as<JsonObject>();
 
-		return fromNetworkJson(jsonObj, rootId);
-	}
+	// 	return fromNetworkJson(jsonObj, rootId);
+	// }
 } // namespace Node

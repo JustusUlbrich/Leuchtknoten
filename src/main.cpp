@@ -3,6 +3,7 @@
 
 #include <FastLED.h>
 #include "WiFi.h"
+#include <WiFiClientSecure.h>
 #include <AsyncTCP.h>
 #include <AsyncJson.h>
 
@@ -15,6 +16,13 @@
 #include "FastLED_RGBW.h"
 #include "defines.h"
 
+// Spotify
+#include "spotify/ArduinoSpotify.h"
+#include "spotify/ArduinoSpotifyCert.h"
+WiFiClientSecure secureWifiClient;
+std::shared_ptr<ArduinoSpotify> gSpotify = nullptr;
+
+// MIDI
 #define SerialMon Serial
 #define APPLEMIDI_DEBUG SerialMon
 #include <AppleMIDI.h>
@@ -27,10 +35,6 @@ APPLEMIDI_CREATE_DEFAULTSESSION_INSTANCE();
 // #include "json.hpp"
 #include "NodeNetwork/Generators.hpp"
 
-// Wifi
-const char* ssid = "PrettyFlyForAWifi";
-const char* password = "***REMOVED***";
-
 SemaphoreHandle_t gNetworkSemaphore;
 
 std::string gRootId = "";
@@ -40,37 +44,78 @@ bool gNeedUpate = false;
 
 Context gContext;
 
-CRGBW gColors[NUM_LEDS];
-
-#ifdef LED_USE_WHITE
-CRGBW leds[NUM_LEDS];
-uint16_t gLedSize = getRGBWsize(NUM_LEDS);
-#else
-CRGB leds[NUM_LEDS];
-uint16_t gLedSize = NUM_LEDS;
-#endif
-
 // Http Server
 AsyncWebServer server(80);
 
-void setup()
+boolean initConfig()
 {
-	gNetworkSemaphore = xSemaphoreCreateBinary();
+	File file = SPIFFS.open(CONFIG_FILE);
+	if (!file) {
+		debugOutln("Failed to read config file");
+		return false;
+	}
+	StaticJsonDocument<1024> doc;
 
-	for (int i = 0; i < NUM_LEDS; i++)
-	{
-		gColors[i] = CRGB::White;
-		gColors[i].w = 0;
+	DeserializationError error = deserializeJson(doc, file);
+	if (error) {
+		debugOutln("Failed to deserialize config file, using default configuration");
+		debugOutln(error.c_str());
+		return false;
 	}
 
+	JsonObject leds = doc["leds"];
+	gContext.config.leds.count = leds["count"] | 16;
+	gContext.config.leds.brightness = leds["brightness"] | 255;
+
+	gContext.config.wifi.ssid = doc["wifi"]["ssid"] | "";
+	gContext.config.wifi.key = doc["wifi"]["key"] | "";
+
+	debugOutln(gContext.config.wifi.ssid.c_str());
+	debugOutln(gContext.config.wifi.key.c_str());
+
+	JsonObject spotify = doc["spotify"];
+	gContext.config.spotify.enabled = spotify["enabled"] | false;
+	gContext.config.spotify.updateRateMs = spotify["update_rate_ms"] | 10000;
+	gContext.config.spotify.market = spotify["market"] | "DE";
+	gContext.config.spotify.clientId = spotify["client_id"] | "";
+	gContext.config.spotify.clientSecret = spotify["client_secret"] | "";
+	gContext.config.spotify.refreshToken = spotify["refresh_token"] | "";
+
+	gContext.config.midi.enabled = doc["midi"]["enabled"] | true;
+
+	return true;
+}
+
+void setup()
+{
 	delay(500); // sanity delay
-	FastLED.addLeds<WS2812, LED_PIN, COLOR_ORDER>((CRGB*)&leds[0], gLedSize);
-
-	FastLED.setBrightness(BRIGHTNESS);
-
 	Serial.begin(9600);
+	gNetworkSemaphore = xSemaphoreCreateBinary();
 
-	WiFi.begin(ssid, password);
+	SPIFFS.begin();
+
+	// Init config from file
+	initConfig();
+	auto& config = gContext.config;
+
+	// Init Context
+	gContext.ledBuffer.resize(config.leds.count);
+	gContext.colorBuffer.resize(config.leds.count);
+	for (int i = 0; i < config.leds.count; i++)
+	{
+		gContext.colorBuffer[i] = CRGB::White;
+		gContext.colorBuffer[i].w = 0;
+	}
+
+	// Init LED
+	const auto ledBuffSize = LED_USE_RGBW ? getRGBWsize(config.leds.count) : config.leds.count;
+	const auto ledBuffer = (CRGB*)gContext.ledBuffer.data();
+	FastLED.addLeds<WS2812, LED_GPIO_PIN, LED_COLOR_ORDER>(ledBuffer, ledBuffSize);
+	FastLED.setBrightness(config.leds.count);
+
+
+	// Init Wifi
+	WiFi.begin(config.wifi.ssid.c_str(), config.wifi.key.c_str());
 	while (WiFi.status() != WL_CONNECTED)
 	{
 		delay(500);
@@ -88,11 +133,11 @@ void setup()
 		});
 
 	AsyncCallbackJsonWebHandler* nodeHandler = new AsyncCallbackJsonWebHandler(
-		"/api/node", [](AsyncWebServerRequest* request, JsonVariant& json) {
+		"/api/node", [&config](AsyncWebServerRequest* request, JsonVariant& json) {
 			JsonObject jsonObj = json.as<JsonObject>();
 
 			xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
-			gNodes = Node::fromNetworkJson(jsonObj, gRootId);
+			gNodes = Node::fromNetworkJson(jsonObj, config, gRootId);
 			gRootNode = std::static_pointer_cast<Node::NodeOutput>(gNodes[gRootId]);
 			xSemaphoreGive(gNetworkSemaphore);
 
@@ -215,7 +260,6 @@ void setup()
 		});
 
 	// Web
-	SPIFFS.begin();
 	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html.gz");
 
 	// Options default handler
@@ -235,43 +279,78 @@ void setup()
 
 	gContext.elapsed = 0.f;
 	gContext.lastUpdate = millis();
-	gContext.numLeds = NUM_LEDS;
 
 	// RTP Midi
-	MIDI.begin();
+	if (config.midi.enabled)
+	{
+		MIDI.begin();
 
-	AppleMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t& ssrc, const char* name) {
-		debugOutln("Connected to session");
-		debugOutln(name);
-		});
-	AppleMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t& ssrc) {
-		debugOutln("Disconnected session");
-		});
+		AppleMIDI.setHandleConnected([](const APPLEMIDI_NAMESPACE::ssrc_t& ssrc, const char* name) {
+			debugOutln("Connected to session");
+			debugOutln(name);
+			});
+		AppleMIDI.setHandleDisconnected([](const APPLEMIDI_NAMESPACE::ssrc_t& ssrc) {
+			debugOutln("Disconnected session");
+			});
 
-	MIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
-		debugOut("Midi note - ch");
-		debugOut(channel);
-		debugOut(" - note ");
-		debugOut(note);
-		debugOut(" - velo ");
-		debugOutln(velocity);
-		gContext.activeNotes.push_back(MidiNote{ channel, note, velocity });
-		// gContext.midiByNote[note] = true;
-		});
-	MIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
-		debugOutln("Midi note off");
-		// gContext.midiByNote[note] = false;
-		});
+		MIDI.setHandleNoteOn([](byte channel, byte note, byte velocity) {
+			debugOut("Midi note - ch");
+			debugOut(channel);
+			debugOut(" - note ");
+			debugOut(note);
+			debugOut(" - velo ");
+			debugOutln(velocity);
+			gContext.activeNotes.push_back(MidiNote{ channel, note, velocity });
+			// gContext.midiByNote[note] = true;
+			});
+		MIDI.setHandleNoteOff([](byte channel, byte note, byte velocity) {
+			debugOutln("Midi note off");
+			// gContext.midiByNote[note] = false;
+			});
+	}
+
+	// Spotify
+	if (config.spotify.enabled) {
+		secureWifiClient.setCACert(spotify_server_cert);
+		gSpotify = std::make_shared<ArduinoSpotify>(
+			secureWifiClient,
+			config.spotify.clientId.c_str(),
+			config.spotify.clientSecret.c_str(),
+			config.spotify.refreshToken.c_str()
+			);
+		debugOutln("Refreshing Access Tokens");
+		if (!gSpotify->refreshAccessToken())
+		{
+			debugOutln("Failed to get access tokens");
+		}
+	}
 }
 
 void loop()
 {
+	const auto& config = gContext.config;
+
 	// Listen to incoming notes
-	MIDI.read();
+	if (config.midi.enabled)
+		MIDI.read();
 
 	unsigned long currentTime = millis();
 	gContext.elapsed = currentTime;
 	gContext.delta = (currentTime - gContext.lastUpdate);
+
+	if (config.spotify.enabled && currentTime > gContext.lastSpotifyUpdate + config.spotify.updateRateMs) {
+		gContext.lastSpotifyUpdate = currentTime;
+		CurrentlyPlaying currentlyPlaying = gSpotify->getCurrentlyPlaying(config.spotify.market.c_str());
+		gContext.spotifyDuration = currentlyPlaying.duraitonMs;
+		gContext.spotifyProgress = currentlyPlaying.progressMs;
+		if (gContext.spotifyDuration > 0) {
+			debugOut(gContext.spotifyProgress);
+			debugOut(" / ");
+			debugOutln(gContext.spotifyDuration);
+			debugOut(" % ");
+			debugOutln(100.f * gContext.spotifyProgress / (float)gContext.spotifyDuration);
+		}
+	}
 
 	if (gRootNode != nullptr && (gNeedUpate || (gContext.delta > 0)))
 	{
@@ -285,26 +364,25 @@ void loop()
 		for (auto& node : gNodes)
 			node.second->preEval(gContext, ledCtx);
 
-		for (int i = 0; i < NUM_LEDS; i++)
+		for (int i = 0; i < config.leds.count; i++)
 		{
 			ledCtx.id = i;
-			gColors[i] = gRootNode->eval(gContext, ledCtx);
+			gContext.colorBuffer[i] = gRootNode->eval(gContext, ledCtx);
 		}
 
 		for (auto& node : gNodes)
 			node.second->postEval(gContext, ledCtx);
 
 		gContext.activeNotes.clear();
-		// debugOut("Eval End");
 
 		xSemaphoreGive(gNetworkSemaphore);
 
-		for (int i = 0; i < NUM_LEDS; i++)
+		for (int i = 0; i < config.leds.count; i++)
 		{
-#ifdef LED_USE_WHITE
-			leds[i] = gColors[i];
+#ifdef LED_USE_RGBW
+			gContext.ledBuffer[i] = gContext.colorBuffer[i];
 #else
-			leds[i] = gColors[i].toCRGB();
+			gContext.ledBuffer[i] = gContext.colorBuffer[i].toCRGB();
 #endif
 		}
 	}

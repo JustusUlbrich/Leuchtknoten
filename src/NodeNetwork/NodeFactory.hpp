@@ -4,21 +4,26 @@
 #include <string>
 #include <unordered_map>
 
+#include "../config.hpp"
 #include <ArduinoJson.h>
 
 namespace Node {
-    class INode;
+	class INode;
 
-    class NodeFactory
-    {
-    private:
-        JsonObject jsonNodes;
-    public:
-        std::unordered_map<std::string, std::shared_ptr<INode>> nodes;
+	class NodeFactory
+	{
+	private:
+		JsonObject jsonNodes;
+		Config config;
 
-        explicit NodeFactory(const JsonObject &jsonNodes);
-        ~NodeFactory();
+	public:
+		std::unordered_map<std::string, std::shared_ptr<INode>> nodes;
 
-        std::shared_ptr<INode> createNodeById(std::string id);
-    };
+		explicit NodeFactory(const JsonObject& jsonNodes, const Config& config);
+		~NodeFactory();
+
+		Config& getConfig();
+
+		std::shared_ptr<INode> createNodeById(std::string id);
+	};
 }

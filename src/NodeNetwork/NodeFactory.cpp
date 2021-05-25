@@ -4,24 +4,29 @@
 #include "Generators.hpp"
 
 namespace Node {
-    NodeFactory::NodeFactory(const JsonObject &jsonNodes)
-        : jsonNodes(jsonNodes)
-    {
-    }
+	NodeFactory::NodeFactory(const JsonObject& jsonNodes, const Config& config)
+		: jsonNodes(jsonNodes), config(config)
+	{
+	}
 
-    NodeFactory::~NodeFactory()
-    {
-    }
+	NodeFactory::~NodeFactory()
+	{
+	}
 
-    std::shared_ptr<INode> NodeFactory::createNodeById(std::string id)
-    {
-        auto search = nodes.find(id);
-        if (search != nodes.end())
-            return search->second;
+	std::shared_ptr<INode> NodeFactory::createNodeById(std::string id)
+	{
+		auto search = nodes.find(id);
+		if (search != nodes.end())
+			return search->second;
 
-        auto node = createNodeFromJson(id, jsonNodes, this);
-        nodes[id] = node;
+		auto node = createNodeFromJson(id, jsonNodes, this);
+		nodes[id] = node;
 
-        return node;
-    }
+		return node;
+	}
+
+	Config& NodeFactory::getConfig()
+	{
+		return config;
+	}
 }
