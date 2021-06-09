@@ -49,4 +49,5 @@ struct Context
 struct LedContext
 {
 	int id;
+	LedInfo info;
 };

@@ -4,8 +4,9 @@
 #include <string>
 #include <unordered_map>
 
-#include "../config.hpp"
 #include <ArduinoJson.h>
+
+#include "../config.hpp"
 
 namespace Node {
 	class INode;

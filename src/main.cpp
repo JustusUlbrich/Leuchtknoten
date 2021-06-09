@@ -35,6 +35,8 @@ APPLEMIDI_CREATE_DEFAULTSESSION_INSTANCE();
 // #include "json.hpp"
 #include "NodeNetwork/Generators.hpp"
 
+#include "config_json.hpp"
+
 SemaphoreHandle_t gNetworkSemaphore;
 
 std::string gRootId = "";
@@ -47,6 +49,37 @@ Context gContext;
 // Http Server
 AsyncWebServer server(80);
 
+void loadNetworkFromFile(String name, Config& config)
+{
+	auto networkPath = "/net/" + name;
+	if (SPIFFS.exists(networkPath))
+	{
+		auto file = SPIFFS.open(networkPath.c_str(), "r");
+
+		DynamicJsonDocument doc(16384);
+
+		// Deserialize the JSON document
+		DeserializationError error = deserializeJson(doc, file);
+		if (error) {
+			debugOutln("Failed to deserialize node network file, skipping it");
+			debugOutln(error.c_str());
+			return;
+		}
+
+		JsonObject jsonObj = doc.as<JsonObject>();
+
+		xSemaphoreTake(gNetworkSemaphore, 1000 * portTICK_PERIOD_MS);
+		gNodes = Node::fromNetworkJson(jsonObj, config, gRootId);
+		gRootNode = std::static_pointer_cast<Node::NodeOutput>(gNodes[gRootId]);
+		xSemaphoreGive(gNetworkSemaphore);
+
+		gNeedUpate = true;
+	}
+	else {
+		debugOutln("Failed to load node network file, skipping it");
+	}
+}
+
 boolean initConfig()
 {
 	File file = SPIFFS.open(CONFIG_FILE);
@@ -54,7 +87,7 @@ boolean initConfig()
 		debugOutln("Failed to read config file");
 		return false;
 	}
-	StaticJsonDocument<1024> doc;
+	DynamicJsonDocument doc(4096);
 
 	DeserializationError error = deserializeJson(doc, file);
 	if (error) {
@@ -63,25 +96,26 @@ boolean initConfig()
 		return false;
 	}
 
+	gContext.config.general = doc["general"].as<General>();
+	gContext.config.wifi = doc["wifi"].as<WifiCfg>();
+	gContext.config.spotify = doc["spotify"].as<SpotifyCfg>();
+	gContext.config.midi = doc["midi"].as<MidiCfg>();
+
+	// gContext.config.leds = doc["leds"].as<LedsCfg>();
+	// TODO: Bug here?! Do manually for now
 	JsonObject leds = doc["leds"];
 	gContext.config.leds.count = leds["count"] | 16;
 	gContext.config.leds.brightness = leds["brightness"] | 255;
 
-	gContext.config.wifi.ssid = doc["wifi"]["ssid"] | "";
-	gContext.config.wifi.key = doc["wifi"]["key"] | "";
+	auto ledInfo = leds["led_info"].as<JsonArray>();
+	for (auto info : ledInfo)
+	{
+		auto i = info.as<LedInfo>();
+		gContext.config.leds.ledInfo.push_back(i);
+	}
 
-	debugOutln(gContext.config.wifi.ssid.c_str());
-	debugOutln(gContext.config.wifi.key.c_str());
-
-	JsonObject spotify = doc["spotify"];
-	gContext.config.spotify.enabled = spotify["enabled"] | false;
-	gContext.config.spotify.updateRateMs = spotify["update_rate_ms"] | 10000;
-	gContext.config.spotify.market = spotify["market"] | "DE";
-	gContext.config.spotify.clientId = spotify["client_id"] | "";
-	gContext.config.spotify.clientSecret = spotify["client_secret"] | "";
-	gContext.config.spotify.refreshToken = spotify["refresh_token"] | "";
-
-	gContext.config.midi.enabled = doc["midi"]["enabled"] | true;
+	// debugOutln(gContext.config.wifi.ssid.c_str());
+	// debugOutln(gContext.config.wifi.key.c_str());
 
 	return true;
 }
@@ -111,8 +145,7 @@ void setup()
 	const auto ledBuffSize = LED_USE_RGBW ? getRGBWsize(config.leds.count) : config.leds.count;
 	const auto ledBuffer = (CRGB*)gContext.ledBuffer.data();
 	FastLED.addLeds<WS2812, LED_GPIO_PIN, LED_COLOR_ORDER>(ledBuffer, ledBuffSize);
-	FastLED.setBrightness(config.leds.count);
-
+	FastLED.setBrightness(config.leds.brightness);
 
 	// Init Wifi
 	WiFi.begin(config.wifi.ssid.c_str(), config.wifi.key.c_str());
@@ -128,10 +161,7 @@ void setup()
 	// TODO: Cleanup and move to new file
 	// TODO: Cleanup endpoints naming :(
 
-	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
-		request->send(SPIFFS, "/index.html", String());
-		});
-
+	// Node network update
 	AsyncCallbackJsonWebHandler* nodeHandler = new AsyncCallbackJsonWebHandler(
 		"/api/node", [&config](AsyncWebServerRequest* request, JsonVariant& json) {
 			JsonObject jsonObj = json.as<JsonObject>();
@@ -150,6 +180,7 @@ void setup()
 		16384U);
 	server.addHandler(nodeHandler);
 
+	// Node parameter update
 	AsyncCallbackJsonWebHandler* updateHandler = new AsyncCallbackJsonWebHandler(
 		"/api/nodeupdate", [](AsyncWebServerRequest* request, JsonVariant& json) {
 			JsonObject jsonObj = json.as<JsonObject>();
@@ -218,7 +249,7 @@ void setup()
 		});
 
 	// --------
-	// LOAD
+	// LOAD / Network get
 	server.on("/api/nodeload", HTTP_GET, [](AsyncWebServerRequest* request) {
 		AsyncWebParameter* p = request->getParam(0);
 		if (p != nullptr && p->name() == "name")
@@ -230,7 +261,7 @@ void setup()
 				auto fileContent = file.readString();
 				file.close();
 
-				request->send(200, "text/json", fileContent);
+				request->send(200, "application/json", fileContent);
 				return;
 			}
 		}
@@ -238,6 +269,7 @@ void setup()
 		request->send(404, "text/plain", "Network not found :(");
 		});
 
+	// List stored networks
 	server.on("/api/nodelist", HTTP_GET, [](AsyncWebServerRequest* request) {
 		File dir = SPIFFS.open("/net");
 		if (!dir || !dir.isDirectory())
@@ -256,10 +288,46 @@ void setup()
 				strcat(result, ",");
 		};
 		strcat(result, "]}");
-		request->send(200, "text/json", result);
+		request->send(200, "application/json", result);
 		});
 
-	// Web
+	// Settings get
+	server.on("/api/settings", HTTP_GET, [](AsyncWebServerRequest* request) {
+		{
+			if (SPIFFS.exists(CONFIG_FILE))
+			{
+				auto file = SPIFFS.open(CONFIG_FILE, "r");
+				auto fileContent = file.readString();
+				file.close();
+
+				request->send(200, "application/json", fileContent);
+				return;
+			}
+		}
+
+		request->send(404, "text/plain", "Network not found :(");
+		});
+
+	// Settings post
+	AsyncCallbackJsonWebHandler* storeSettingsHandler = new AsyncCallbackJsonWebHandler(
+		"/api/settingsstore", [](AsyncWebServerRequest* request, JsonVariant& json) {
+			auto config = json.as<std::string>();
+
+			debugOut("Storing config");
+
+			auto file = SPIFFS.open(CONFIG_FILE, "w");
+			file.write((uint8_t*)(config.c_str()), config.size());
+			file.close();
+
+			request->send(200, "text/plain", "Success!");
+		},
+		4096U);
+	server.addHandler(storeSettingsHandler);
+
+	// HTTP / Frontend
+	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send(SPIFFS, "/index.html", String());
+		});
 	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html.gz");
 
 	// Options default handler
@@ -279,6 +347,10 @@ void setup()
 
 	gContext.elapsed = 0.f;
 	gContext.lastUpdate = millis();
+
+	// Load first network
+	if (config.general.initMode.length() > 0)
+		loadNetworkFromFile(config.general.initMode, config);
 
 	// RTP Midi
 	if (config.midi.enabled)
@@ -359,6 +431,7 @@ void loop()
 		gContext.lastUpdate = currentTime;
 		gNeedUpate = false;
 
+		LedInfo emptyInfo;
 		LedContext ledCtx;
 		ledCtx.id = -1;
 		for (auto& node : gNodes)
@@ -367,6 +440,7 @@ void loop()
 		for (int i = 0; i < config.leds.count; i++)
 		{
 			ledCtx.id = i;
+			ledCtx.info = config.leds.ledInfo.size() > i ? config.leds.ledInfo[i] : emptyInfo;
 			gContext.colorBuffer[i] = gRootNode->eval(gContext, ledCtx);
 		}
 

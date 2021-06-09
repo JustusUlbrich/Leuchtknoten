@@ -1,4 +1,7 @@
 {
+	"general": {
+		"init_mode": ""
+	},
 	"leds": {
 		"count": 16,
 		"brightness": 255
