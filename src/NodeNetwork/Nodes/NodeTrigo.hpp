@@ -4,7 +4,7 @@
 #include "../api/INode.hpp"
 #include "../api/Port.hpp"
 
-#include "../../context.hpp"
+struct Context;
 
 namespace Node
 {
@@ -12,19 +12,19 @@ namespace Node
 	{
 
 	public:
-		explicit NodeTrigo(const ArduinoJson::JsonObject &nodeJson, NodeFactory *nodeFactory);
+		explicit NodeTrigo(const ArduinoJson::JsonObject& nodeJson, NodeFactory* nodeFactory);
 		~NodeTrigo();
 
-		void connectOutport(const std::string &portID, Connection<float> &connection) override;
+		void connectOutport(const std::string& portID, Connection<float>& connection) override;
 
 		std::shared_ptr<InputPort<float>> in;
 		std::shared_ptr<OutputPort<float>> sinOut;
 		std::shared_ptr<OutputPort<float>> cosOut;
 		std::shared_ptr<OutputPort<float>> tanOut;
 
-		float getInput(const Context &context, const LedContext &ledContext);
-		float evalSin(const Context &context, const LedContext &ledContext);
-		float evalCos(const Context &context, const LedContext &ledContext);
-		float evalTan(const Context &context, const LedContext &ledContext);
+		float getInput(const Context& context, const LedContext& ledContext);
+		float evalSin(const Context& context, const LedContext& ledContext);
+		float evalCos(const Context& context, const LedContext& ledContext);
+		float evalTan(const Context& context, const LedContext& ledContext);
 	};
 } // namespace Node

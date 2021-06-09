@@ -19,6 +19,18 @@ namespace Node
 			"elapsed",
 			this,
 			[this](const Context& c, const LedContext& lc) { return evalElapsed(c, lc); });
+		posXOut = std::make_shared<OutputPort<float>>(
+			"posX",
+			this,
+			[this](const Context& c, const LedContext& lc) { return evalPosX(c, lc); });
+		posYOut = std::make_shared<OutputPort<float>>(
+			"posY",
+			this,
+			[this](const Context& c, const LedContext& lc) { return evalPosY(c, lc); });
+		posZOut = std::make_shared<OutputPort<float>>(
+			"posZ",
+			this,
+			[this](const Context& c, const LedContext& lc) { return evalPosZ(c, lc); });
 	}
 
 	NodeLookup::~NodeLookup()
@@ -40,6 +52,21 @@ namespace Node
 		return context.elapsed / 1000.f;
 	}
 
+	float NodeLookup::evalPosX(const Context& context, const LedContext& ledContext)
+	{
+		return ledContext.info.posX;
+	}
+
+	float NodeLookup::evalPosY(const Context& context, const LedContext& ledContext)
+	{
+		return ledContext.info.posY;
+	}
+
+	float NodeLookup::evalPosZ(const Context& context, const LedContext& ledContext)
+	{
+		return ledContext.info.posZ;
+	}
+
 	void NodeLookup::connectOutport(const std::string& portID, Connection<float>& connection)
 	{
 		if (portID == "nodeId")
@@ -48,5 +75,11 @@ namespace Node
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(numLedsOut);
 		else if (portID == "elapsed")
 			connection.fromPort = std::shared_ptr<OutputPort<float>>(elapsedOut);
+		else if (portID == "posX")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(posXOut);
+		else if (portID == "posY")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(posYOut);
+		else if (portID == "posZ")
+			connection.fromPort = std::shared_ptr<OutputPort<float>>(posZOut);
 	}
 } // namespace Node

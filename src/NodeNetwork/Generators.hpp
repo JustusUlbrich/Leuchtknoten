@@ -24,6 +24,7 @@
 #include "nodes/NodeAnimNumber.hpp"
 #include "nodes/NodeMidi.hpp"
 #include "nodes/NodeBool.hpp"
+#include "nodes/NodeNoise.hpp"
 
 #include "NodeFactory.hpp"
 
@@ -104,6 +105,10 @@ namespace Node
 		{
 			newNode = std::make_shared<NodeMidi>(nodeJson, nodeFactory);
 		}
+		else if (nodeJson["name"] == "Noise")
+		{
+			newNode = std::make_shared<NodeNoise>(nodeJson, nodeFactory);
+		}
 		else
 		{
 			debugOut("Unknown Node: ");
@@ -153,16 +158,4 @@ namespace Node
 
 		return factory.nodes;
 	}
-
-	// static std::unordered_map<std::string, std::shared_ptr<INode>> fromNetworkJson(char* json, std::string& rootId)
-	// {
-	// 	debugOutln("Start parse");
-
-	// 	DynamicJsonDocument doc(8192);
-	// 	deserializeJson(doc, json, DeserializationOption::NestingLimit(50));
-
-	// 	JsonObject jsonObj = doc.as<JsonObject>();
-
-	// 	return fromNetworkJson(jsonObj, rootId);
-	// }
 } // namespace Node
