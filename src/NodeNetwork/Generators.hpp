@@ -25,6 +25,8 @@
 #include "nodes/NodeMidi.hpp"
 #include "nodes/NodeBool.hpp"
 #include "nodes/NodeNoise.hpp"
+#include "nodes/NodeSwitch.hpp"
+#include "nodes/NodeArray.hpp"
 
 #include "NodeFactory.hpp"
 
@@ -108,6 +110,14 @@ namespace Node
 		else if (nodeJson["name"] == "Noise")
 		{
 			newNode = std::make_shared<NodeNoise>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Switch")
+		{
+			newNode = std::make_shared<NodeSwitch>(nodeJson, nodeFactory);
+		}
+		else if (nodeJson["name"] == "Array")
+		{
+			newNode = std::make_shared<NodeArray>(nodeJson, nodeFactory);
 		}
 		else
 		{

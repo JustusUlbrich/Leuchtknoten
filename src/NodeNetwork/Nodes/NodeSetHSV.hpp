@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 
-#include "../api/DataGradient.hpp"
 #include "../api/INode.hpp"
 #include "../api/Port.hpp"
 
@@ -24,7 +23,6 @@ namespace Node
 		std::shared_ptr<InputPort<float>> sIn;
 		std::shared_ptr<InputPort<float>> vIn;
 		std::shared_ptr<OutputPort<CRGB>> rgbOut;
-		DataGradient gradient;
 	};
 
 } // namespace Node

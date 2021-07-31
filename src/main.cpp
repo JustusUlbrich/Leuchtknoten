@@ -87,7 +87,7 @@ boolean initConfig()
 		debugOutln("Failed to read config file");
 		return false;
 	}
-	DynamicJsonDocument doc(4096);
+	DynamicJsonDocument doc(32768);
 
 	DeserializationError error = deserializeJson(doc, file);
 	if (error) {
@@ -321,14 +321,22 @@ void setup()
 
 			request->send(200, "text/plain", "Success!");
 		},
-		4096U);
+		32768U);
 	server.addHandler(storeSettingsHandler);
 
 	// HTTP / Frontend
 	server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
 		request->send(SPIFFS, "/index.html", String());
 		});
+	server.on("/editor", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send(SPIFFS, "/index.html", String());
+		});
+	server.on("/settings", HTTP_GET, [](AsyncWebServerRequest* request) {
+		request->send(SPIFFS, "/index.html", String());
+		});
 	server.serveStatic("/", SPIFFS, "/").setDefaultFile("index.html.gz");
+	server.serveStatic("/editor", SPIFFS, "/").setDefaultFile("index.html.gz");
+	server.serveStatic("/settings", SPIFFS, "/").setDefaultFile("index.html.gz");
 
 	// Options default handler
 	server.onNotFound([](AsyncWebServerRequest* request) {

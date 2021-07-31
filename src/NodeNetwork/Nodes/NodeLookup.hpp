@@ -1,7 +1,6 @@
 #pragma once
 #include <string>
 
-#include "../api/DataGradient.hpp"
 #include "../api/INode.hpp"
 #include "../api/Port.hpp"
 
