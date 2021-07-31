@@ -5,7 +5,7 @@ Leuchknoten is an interactive LED controller to create beautiful node based patt
 ## Description
 
 Leuchtknoten uses a node based editor to allow users to interactively create and modify patterns for addressable LEDs (e.g. ws2812). 
-It ships an react based frontend (TODO LINK REPO) on port 80, that communicates with the rest API. 
+It ships an react based frontend (Leuchtknoten-ui)[https://github.com/JustusUlbrich/Leuchtknoten-ui] on port 80, that communicates with the rest API. 
 
 ## Installation
 
