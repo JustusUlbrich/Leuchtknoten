@@ -12,11 +12,11 @@ void convertFromJson(JsonVariantConst src, LedInfo& dst) {
 	dst.posZ = src["pos_z"] | 0.f;
 }
 
-NO_INLINE void convertFromJson(JsonVariantConst src, LedsCfg& dst) {
+void convertFromJson(JsonVariantConst src, LedsCfg& dst) {
 	dst.count = src["count"] | 0;
 	dst.brightness = src["brightness"] | 0;
 
-	auto ledInfo = src["led_info"].as<JsonArray>();
+	auto ledInfo = src["led_info"].as<JsonArrayConst>();
 	for (auto info : ledInfo)
 	{
 		auto i = info.as<LedInfo>();
