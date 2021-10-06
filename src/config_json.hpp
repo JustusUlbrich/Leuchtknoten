@@ -40,6 +40,7 @@ void convertFromJson(JsonVariantConst src, SpotifyCfg& dst) {
 void convertFromJson(JsonVariantConst src, WifiCfg& dst) {
 	dst.ssid = src["ssid"] | "";
 	dst.key = src["key"] | "";
+	dst.hostname = src["hostname"] | "";
 }
 
 void convertFromJson(JsonVariantConst src, Config& dst) {

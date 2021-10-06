@@ -148,6 +148,7 @@ void setup()
 	FastLED.setBrightness(config.leds.brightness);
 
 	// Init Wifi
+	WiFi.setHostname(config.wifi.hostname.c_str());
 	WiFi.begin(config.wifi.ssid.c_str(), config.wifi.key.c_str());
 	while (WiFi.status() != WL_CONNECTED)
 	{

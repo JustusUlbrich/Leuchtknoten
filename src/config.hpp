@@ -37,6 +37,7 @@ struct SpotifyCfg {
 struct WifiCfg {
 	String ssid;
 	String key;
+	String hostname;
 };
 
 struct Config {

@@ -8,7 +8,8 @@
 	},
 	"wifi": {
 		"ssid": "",
-		"key": ""
+		"key": "",
+		"hostname": "Leuchtknoten"
 	},
 	"spotify": {
 		"enabled": false,
